@@ -27,39 +27,41 @@
 
 <div class="jumbotron">
     <div class="container-fluid">
-        <h3>NFL Schedule</h3>
-            <h2>Player-  {{ player.first_name }} {{ player.last_name }}</h2>
-            <form method="post" action="">
-
-                {% csrf_token %}
-
-                <input type="submit" value="OK">
-
-
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Game ID</th>
-                        <th>Home Team</th>
-                        <th>Away Team</th>
-                        <th>Pick</th>
-                        <th>Confidence Score</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for x in current_games %}
-                    <tr>
-                        <td>{{ x.game.game_time|timezone:"America/Chicago" }}</td>
-                        <td> {{ x.game.id }}</td>
-                        <td><a href="{{ x.game.home_team.get_absolute_url }}">{{ x.game.home_team.city }} {{ x.game.home_team.name }}</a></td>
-                        <td><a href="{{ x.game.away_team.get_absolute_url }}">{{ x.game.away_team.city }} {{ x.game.away_team.name }}</a></td>
-                        <td>{{ x.pick }}</td>
-                        <td>{{ x.conf }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <form method="post" action="">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-sm-8">
+                    <h2>NFL Schedule</h2>
+                </div>
+                <div class="col-sm-4">
+                        <input class="btn btn-primary btn-md" type="submit" value="Submit Entry">
+                </div>
+            <div class="row">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Game ID</th>
+                            <th>Home Team</th>
+                            <th>Away Team</th>
+                            <th>Pick</th>
+                            <th>Confidence Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for x in current_games %}
+                        <tr>
+                            <td>{{ x.game.game_time|timezone:"America/Chicago" }}</td>
+                            <td> {{ x.game.id }}</td>
+                            <td><a href="{{ x.game.home_team.get_absolute_url }}">{{ x.game.home_team.city }} {{ x.game.home_team.name }}</a></td>
+                            <td><a href="{{ x.game.away_team.get_absolute_url }}">{{ x.game.away_team.city }} {{ x.game.away_team.name }}</a></td>
+                            <td>{{ x.pick }}</td>
+                            <td>{{ x.conf }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </form>
     </div>
 </div>

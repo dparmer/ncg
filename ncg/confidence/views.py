@@ -10,7 +10,7 @@ from .forms import EntryAddForm, EntryUpdateForm
 
 def get_menu_list():
 
-    menu_items = (('Login', 'registration/login'),
+    menu_items = (('Login', 'login'),
                   ('NFL Schedule', 'confidence/current_games_list'),
                   ('Logout', 'login'),
                   ('Current Entry', 'confidence/current_entry'),

@@ -22,6 +22,9 @@ class Player(models.Model):
     has_current_entry = models.BooleanField(verbose_name='Has Current Entry?', default=False)
     latest_entry_time = models.DateTimeField(verbose_name="Last Entry", null=True, blank=True)
 
+    def __str__(self):
+        return '%s %s %s %s' % (self.id, self.last_name, self.first_name, self.username)
+
     def get_absolute_url(self):
         return str("/confidence/entry/" + str(self.id) + "/" + str(NflGame.get_nfl_week()) + "/")
 
@@ -80,6 +83,9 @@ class NflTeam(models.Model):
     wins = models.IntegerField(verbose_name='Wins')
     losses = models.IntegerField(verbose_name='Losses')
 
+    def __str__(self):
+        return '%s %s %s' % (self.id, self.city, self.name)
+
     def get_absolute_url(self):
         return "/confidence/team/%i/" % self.id
 
@@ -132,6 +138,9 @@ class NflGame(models.Model):
     is_final = models.BooleanField(verbose_name='Game Complete')
     objects = models.Manager()
     current_games = CurrentNflGame()
+
+    def __str__(self):
+        return '%s %s %s %s' % (self.id, self.game_date, self.home_team.name, self.away_team.name)
 
     def get_winner_pretty(self):
         if self.is_final:
@@ -230,6 +239,9 @@ class Entry(models.Model):
     potential_points = models.IntegerField(verbose_name='Potential Points', default=0)
     is_locked = models.BooleanField(verbose_name="Entry Locked", default=False)
 
+    def __str__(self):
+        return '%s %s %s %s %s' % (self.id, self.season, self.week, self.player.last_name, self.player.first_name)
+
     def set_lock(self):
         now = pytz.utc.localize(datetime.datetime.now())
         if now > self.nfl_game.game_time:
@@ -326,6 +338,12 @@ class PlayerMgr(models.Manager):
 class NflGameMgr(models.Manager):
 
     @classmethod
+    def game_history_update(cls):
+
+        for week in range(1,NflGame.get_nfl_week()):
+            cls.game_score_update(week=week)
+
+    @classmethod
     def game_update(cls):
 
         def parse_teamname(teamnames):
@@ -360,7 +378,7 @@ class NflGameMgr(models.Manager):
                 print('game not found')
 
     @classmethod
-    def game_score_update(cls):
+    def game_score_update(cls, week=None):
 
         def clean_score(score):
             if score == '--':
@@ -370,7 +388,9 @@ class NflGameMgr(models.Manager):
                 score = int(score)
                 return score
 
-        week = NflGame.get_nfl_week()
+        if not week:
+            week = NflGame.get_nfl_week()
+
         season = NflGame.get_nfl_season()
 
         nfl_com_url = 'http://www.nfl.com/scores/' + str(season) + '/REG' + str(week)
@@ -424,8 +444,9 @@ class NflGameMgr(models.Manager):
 
             if game:
                 game.set_result(winning_team=win_team, win_score=win_score, lose_score=lose_score, is_final=is_final)
+                print('game updated->', game)
             else:
-                print('game not found')
+                print('game not found', game)
             if is_final:
                 entries = Entry.get_entries_for_game(game)
                 if entries:
@@ -476,5 +497,8 @@ class NflGameMgr(models.Manager):
                                away_team_score=0,
                                is_final=False)
                 game.save()
+
+        """ update the game scores """
+        cls.game_history_update()
 
 

@@ -29,6 +29,16 @@ class NflTeamAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'short_name', 'wins', 'losses']
 
 
+class EntryAdmin(admin.ModelAdmin):
+    fields = ['player', 'season', 'week', 'nfl_game', 'is_winner',
+              'confidence', 'pick_selection', 'projected_winner', 'is_complete', 'points_earned',
+              'potential_points', 'is_locked' ]
+    list_display = ['id', 'player', 'season', 'week', 'nfl_game', 'is_winner',
+                    'confidence', 'pick_selection', 'projected_winner', 'is_complete', 'points_earned',
+                    'potential_points', 'is_locked']
+
+
 admin.site.register(Player, PlayerAdmin)
 admin.site.register(NflGame, NflGameAdmin)
 admin.site.register(NflTeam, NflTeamAdmin)
+admin.site.register(Entry, EntryAdmin)
