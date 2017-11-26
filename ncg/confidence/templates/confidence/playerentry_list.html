@@ -1,0 +1,74 @@
+{% extends "confidence/base.html" %}
+{% load staticfiles %}
+{% load tz %}
+{% block content %}
+{% localtime on %}
+
+<div class="jumbotron">
+    <div class="container-fluid">
+        <div class="row">
+          <div class="col-sm-4">
+            <h3>{{ player.first_name }} {{ player.last_name }}</h3>
+          </div>
+          <div class="col-sm-4">
+            <h3>Week {{ week }} Entry</h3>
+          </div>
+          <div class="col-sm-4">
+            <h3>Total Points- {{ points_total }}</h3>
+          </div>
+        </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Complete</th>
+                        <th>Home Team</th>
+                        <th>Home Team Score</th>
+                        <th>Away Team</th>
+                        <th>Away Team Score</th>
+                        <th>Pick</th>
+                        <th>Game Winner</th>
+                        <th>Confidence</th>
+                        <th>Win / Lose</th>
+                        <th>Points Earned</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pick in current_entry %}
+                        {% if session_user == player %}
+                            <tr>
+                                <td>{{ pick.is_complete }}</td>
+                                <td>{{ pick.nfl_game.home_team.name }}</td>
+                                <td>{{ pick.nfl_game.home_team_score }}</td>
+                                <td>{{ pick.nfl_game.away_team.name }}</td>
+                                <td>{{ pick.nfl_game.away_team_score }}</td>
+                                <td>{{ pick.projected_winner.name }}</td>
+                                <td>{{ pick.nfl_game.winner.name }}</td>
+                                <td>{{ pick.confidence }}</td>
+                                <td>{{ pick.is_winner|yesno:"Win,Lose,tbd" }}</td>
+                                <td>{{ pick.points_earned }}</td>
+                            </tr>
+                            {% else %}
+                                {% if pick.is_locked %}
+                                <tr>
+                                    <td>{{ pick.is_complete }}</td>
+                                    <td>{{ pick.nfl_game.home_team.name }}</td>
+                                    <td>{{ pick.nfl_game.home_team_score }}</td>
+                                    <td>{{ pick.nfl_game.away_team.name }}</td>
+                                    <td>{{ pick.nfl_game.away_team_score }}</td>
+                                    <td>{{ pick.projected_winner.name }}</td>
+                                    <td>{{ pick.nfl_game.winner.name }}</td>
+                                    <td>{{ pick.confidence }}</td>
+                                    <td>{{ pick.is_winner|yesno:"Win,Lose,tbd" }}</td>
+                                    <td>{{ pick.points_earned }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+
+    </div>
+</div>
+
+{% endlocaltime %}
+{% endblock %}}

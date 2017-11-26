@@ -1,0 +1,72 @@
+{% extends "confidence/base.html" %}
+{% load staticfiles %}
+{% load tz %}
+{% block content %}
+{% localtime on %}
+
+<div class="jumbotron">
+    <div class="container-fluid">
+
+        <div class="row">
+          <div class="col-sm-6">
+              <h3>NFL Schedule Week {{ week }}</h3>
+          </div>
+          <div class="col-sm-6">
+            <h3>Active Entries
+                {% if session_user.has_current_entry %}
+                    <a class="btn btn-primary btn-md" href="/confidence/update_entry/{{ session_user.id }}/{{ week }}">Update Entry</a>
+                {% else %}
+                    <a class="btn btn-primary btn-md" href="/confidence/create_entry">Create Entry</a>
+                {% endif %}
+            </h3>
+          </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-6">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Game</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for game in current_games.all %}
+                    <tr>
+                        <td>{{ game.game_time|date:"l h:i" }}</td>
+                        <td><a href="{{ game.away_team.get_absolute_url }}">{{ game.away_team.name }} @ </a><a href="{{ game.home_team.get_absolute_url }}">{{ game.home_team.name }}</a></td>
+                        <td>{{ game.get_winner_pretty }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+               <div class="col-sm-6">
+                   <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>Current Points Total</th>
+                            </tr>
+                        <tbody>
+                            {% for plyr in players %}
+                            <tr>
+                                {% if plyr == session_user %}
+                                <td><a href="{{ plyr.get_update_url }}">{{ plyr.first_name }} {{ plyr.last_name }}</a></td>
+                                {% else %}
+                                <td>{{ plyr.first_name }} {{ plyr.last_name }}</td>
+                                {% endif %}
+                                <td><a href="{{ plyr.get_absolute_url }}">{{ plyr.current_points }}</a></td>
+                            </tr>
+                            {% endfor %}
+                           </tbody>
+                   </table>
+
+          </div>
+        </div>
+    </div>
+</div>
+
+{% endlocaltime %}
+{% endblock %}}
