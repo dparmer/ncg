@@ -136,6 +136,8 @@ class NflGame(models.Model):
     home_team_score = models.IntegerField(verbose_name='Home Team Score')
     away_team_score = models.IntegerField(verbose_name='Away Team Score')
     is_final = models.BooleanField(verbose_name='Game Complete')
+    in_progress = models.BooleanField(verbose_name='Game In Progress', default=False)
+    game_status = models.CharField(max_length=15, verbose_name='Game Status', default='Scheduled')
     objects = models.Manager()
     current_games = CurrentNflGame()
 
@@ -151,7 +153,7 @@ class NflGame(models.Model):
         else:
             return "tbd"
 
-    def set_result(self, win_score, lose_score, winning_team=None, is_final=False):
+    def set_result(self, win_score, lose_score, winning_team=None, is_final=False, in_progress=False):
         self.winner = winning_team
         if winning_team == self.home_team:
             self.home_team_score = win_score
@@ -160,6 +162,11 @@ class NflGame(models.Model):
             self.home_team_score = lose_score
             self.away_team_score = win_score
         self.is_final = is_final
+        self.in_progress = in_progress
+        if is_final:
+            self.game_status = 'Final'
+        elif in_progress:
+            self.game_status = 'In Progress'
         self.save()
 
     @classmethod
@@ -405,7 +412,7 @@ class NflGameMgr(models.Manager):
         for box_score in div_box_scores:
 
             final_c = box_score.find(class_='time-left')
-            if final_c.contents[0].strip() == 'FINAL':
+            if final_c.contents[0].strip()[:5] == 'FINAL':
                 is_final = True
             else:
                 is_final = False
@@ -479,7 +486,8 @@ class NflGameMgr(models.Manager):
 
             gametime = datetime.datetime(int(dates[2]) + 2000, int(dates[0]), int(dates[1]),
                                          hour=hour_of_day, minute=int(min_of_day))
-            gametime = make_aware(gametime, get_current_timezone(), is_dst=True)
+            new_york_tz = pytz.timezone("America/New_York")
+            gametime = make_aware(gametime, new_york_tz, is_dst=True)
             print('timezone-', get_current_timezone(), 'time-', hour_of_day, min_of_day, 'gametime-', gametime)
 
             if home_team is None or away_team is None:
