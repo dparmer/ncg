@@ -21,6 +21,7 @@ class Player(models.Model):
     username = models.CharField(max_length=50, verbose_name='User Name', null=True, blank=True)
     has_current_entry = models.BooleanField(verbose_name='Has Current Entry?', default=False)
     latest_entry_time = models.DateTimeField(verbose_name="Last Entry", null=True, blank=True)
+    active_wk_points = models.IntegerField(verbose_name="Current Week Points", default=0)
 
     def __str__(self):
         return '%s %s %s %s' % (self.id, self.last_name, self.first_name, self.username)
@@ -34,7 +35,10 @@ class Player(models.Model):
 
     def set_entry(self):
         self.has_current_entry = True
-        self.latest_entry_time = datetime.datetime.now()
+
+        now = datetime.datetime.now()
+        now = make_aware(now, get_current_timezone(), is_dst=True)
+        self.latest_entry_time = now
         self.save()
 
     def check_entry(self):
@@ -49,12 +53,17 @@ class Player(models.Model):
         week = NflGame.get_nfl_week()
         season = NflGame.get_nfl_season()
         points = Entry.get_points_total(season=season, week=week, player=self)
+        self.active_wk_points = points['points']
+        self.save()
         return points
 
     @classmethod
     def get_current_players(cls):
         try:
-            return cls.objects.filter(has_current_entry=True)
+            players = cls.objects.filter(has_current_entry=True)
+            for player in players:
+                player.current_points
+            return cls.objects.filter(has_current_entry=True).order_by('-active_wk_points')
         except Exception as inst:
             print(inst)
             return None
@@ -153,6 +162,17 @@ class NflGame(models.Model):
         else:
             return "tbd"
 
+    @classmethod
+    def get_game_count(cls, week=None):
+        season = NflGame.get_nfl_season()
+        if not week:
+            week = NflGame.get_nfl_week()
+        try:
+            return cls.objects.filter(season=season, week=week).count()
+        except Exception as inst:
+            print(inst)
+            return None
+
     def set_result(self, win_score, lose_score, winning_team=None, is_final=False, in_progress=False):
         self.winner = winning_team
         if winning_team == self.home_team:
@@ -250,8 +270,11 @@ class Entry(models.Model):
         return '%s %s %s %s %s' % (self.id, self.season, self.week, self.player.last_name, self.player.first_name)
 
     def set_lock(self):
-        now = pytz.utc.localize(datetime.datetime.now())
-        if now > self.nfl_game.game_time:
+        #now = pytz.utc.localize(datetime.datetime.now())
+        now = datetime.datetime.now()
+        print('set_lock now->', now.astimezone(pytz.utc), 'game_time->', self.nfl_game.game_time, 'game->', self.nfl_game)
+        if now.astimezone(pytz.utc) > self.nfl_game.game_time:
+            print('current time past game time- setting lock', self)
             self.is_locked = True
             self.save()
 
@@ -263,10 +286,18 @@ class Entry(models.Model):
     @classmethod
     def get_points_total(cls, season, week, player):
         entries = Entry.objects.filter(season=season, week=week, player=player)
-        points = 0
+        results = {}
+        results['points'] = 0
+        results['lost_points'] = 0
+        results['possible_points'] = 0
+
         for entry in entries:
-            points += entry.points_earned
-        return points
+            results['points'] += entry.points_earned
+            results['possible_points'] += entry.confidence
+            if entry.points_earned == 0 and entry.is_complete:
+                results['lost_points'] += entry.confidence
+        results['remain_points'] = results['possible_points'] - (results['points'] + results['lost_points'])
+        return results
 
     @classmethod
     def get_entries(cls, week):
@@ -279,7 +310,7 @@ class Entry(models.Model):
     @classmethod
     def get_player_entries(cls, player, week):
         try:
-            return cls.objects.filter(week=week, player=player)
+            return cls.objects.filter(week=week, player=player).order_by("-confidence")
         except Exception as inst:
             print(inst)
             return None
@@ -412,53 +443,90 @@ class NflGameMgr(models.Manager):
         for box_score in div_box_scores:
 
             final_c = box_score.find(class_='time-left')
-            if final_c.contents[0].strip()[:5] == 'FINAL':
-                is_final = True
+            in_prog_c = final_c.find(class_='down-yardline')
+
+            if not in_prog_c:
+                print('game is final', final_c.contents)
+                if final_c.contents[0].strip()[:5] == 'FINAL':
+                    is_final = True
+                else:
+                    is_final = False
+
+                div_away_team = box_score.find("div", attrs={'class':"away-team"})
+                div_home_team = box_score.find("div", attrs={'class':"home-team"})
+
+                home_team_name_class = div_home_team.find(class_='team-name')
+                home_team_name_c = home_team_name_class.find('a')
+                home_team_score_c = div_home_team.find(class_='total-score')
+
+                away_team_name_class = div_away_team.find(class_='team-name')
+                away_team_name_c = away_team_name_class.find('a')
+                away_team_score_c = div_away_team.find(class_='total-score')
+
+                home_team_name = home_team_name_c.contents[0].strip()
+                away_team_name = away_team_name_c.contents[0].strip()
+                print('teams->', home_team_name, away_team_name)
+                home_team_score = clean_score(home_team_score_c.contents[0].strip())
+                away_team_score = clean_score(away_team_score_c.contents[0].strip())
+
+                home_team = NflTeam.get_team(name=home_team_name)
+                away_team = NflTeam.get_team(name=away_team_name)
+                game = NflGame.get_game(week=week, home_team=home_team, away_team=away_team)
+
+                win_team = None
+                if home_team_score > away_team_score:
+                    if is_final:
+                        win_team = home_team
+                    win_score = home_team_score
+                    lose_score = away_team_score
+                else:
+                    if is_final:
+                        win_team = away_team
+                    win_score = away_team_score
+                    lose_score = home_team_score
+
+                if game:
+                    game.set_result(winning_team=win_team, win_score=win_score, lose_score=lose_score, is_final=is_final)
+                    print('game updated->', game)
+                else:
+                    print('game not found', game)
+                if is_final:
+                    entries = Entry.get_entries_for_game(game)
+                    if entries:
+                        for entry in entries:
+                            entry.set_final(winning_team=win_team)
+
             else:
+                print('game in progress', in_prog_c)
+                # <span class="down-yardline">1st &amp; 10 IND 19</span>
                 is_final = False
+                div_away_team = box_score.find("div", attrs={'class':"away-team"})
+                div_home_team = box_score.find("div", attrs={'class':"home-team"})
 
-            div_away_team = box_score.find("div", attrs={'class':"away-team"})
-            div_home_team = box_score.find("div", attrs={'class':"home-team"})
+                home_team_name_class = div_home_team.find(class_='team-name')
+                home_team_name_c = home_team_name_class.find('a')
+                home_team_score_c = div_home_team.find(class_='total-score')
 
-            home_team_name_class = div_home_team.find(class_='team-name')
-            home_team_name_c = home_team_name_class.find('a')
-            home_team_score_c = div_home_team.find(class_='total-score')
+                away_team_name_class = div_away_team.find(class_='team-name')
+                away_team_name_c = away_team_name_class.find('a')
+                away_team_score_c = div_away_team.find(class_='total-score')
 
-            away_team_name_class = div_away_team.find(class_='team-name')
-            away_team_name_c = away_team_name_class.find('a')
-            away_team_score_c = div_away_team.find(class_='total-score')
+                home_team_name = home_team_name_c.contents[0].strip()
+                away_team_name = away_team_name_c.contents[0].strip()
+                print('teams->', home_team_name, away_team_name)
 
-            home_team_name = home_team_name_c.contents[0].strip()
-            away_team_name = away_team_name_c.contents[0].strip()
-            home_team_score = clean_score(home_team_score_c.contents[0].strip())
-            away_team_score = clean_score(away_team_score_c.contents[0].strip())
+                home_team = NflTeam.get_team(name=home_team_name)
+                away_team = NflTeam.get_team(name=away_team_name)
+                game = NflGame.get_game(week=week, home_team=home_team, away_team=away_team)
 
-            home_team = NflTeam.get_team(name=home_team_name)
-            away_team = NflTeam.get_team(name=away_team_name)
-            game = NflGame.get_game(week=week, home_team=home_team, away_team=away_team)
+                win_team = None
 
-            win_team = None
-            if home_team_score > away_team_score:
-                if is_final:
-                    win_team = home_team
-                win_score = home_team_score
-                lose_score = away_team_score
-            else:
-                if is_final:
-                    win_team = away_team
-                win_score = away_team_score
-                lose_score = home_team_score
+                if game:
+                    game.set_result(winning_team=win_team, win_score=0, lose_score=0, is_final=False, in_progress=True)
+                    print('game updated->', game)
+                else:
+                    print('game not found', game)
 
-            if game:
-                game.set_result(winning_team=win_team, win_score=win_score, lose_score=lose_score, is_final=is_final)
-                print('game updated->', game)
-            else:
-                print('game not found', game)
-            if is_final:
-                entries = Entry.get_entries_for_game(game)
-                if entries:
-                    for entry in entries:
-                        entry.set_final(winning_team=win_team)
 
     @classmethod
     def game_factory(cls):

@@ -80,6 +80,7 @@ class NflGameList(ListView):
             print("NflGameList player->", player.first_name, player.last_name)
             player.check_entry()
             Entry.set_entry_locks()
+            NflGameMgr.game_score_update()
             return super(NflGameList, self).get(request, *args, **kwargs)
         else:
             print('NflGameList:not_authenticated_get->', request.user)
@@ -182,7 +183,7 @@ class UpdateEntry(CreateView):
                             game = NflGame.get_game(id=game_id)
                             game_dict[game_id] = game
                         elif fld_type == 'confidence':
-                            conf_dict[game_id] = value
+                            conf_dict[game_id] = int(value)
                     """ Clear the previous data  """
                     Entry.objects.filter(player=player, week=week).delete()
 

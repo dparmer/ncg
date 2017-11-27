@@ -14,55 +14,39 @@
             <h3>Week {{ week }} Entry</h3>
           </div>
           <div class="col-sm-4">
-            <h3>Total Points- {{ points_total }}</h3>
+            <h3>Total Points- {{ player.current_points.points }}</h3>
           </div>
         </div>
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Complete</th>
-                        <th>Home Team</th>
-                        <th>Home Team Score</th>
-                        <th>Away Team</th>
-                        <th>Away Team Score</th>
+                        <th>Date</th>
+                        <th>Game</th>
+                        <th>Status</th>
+                        <th>Result</th>
+
                         <th>Pick</th>
-                        <th>Game Winner</th>
-                        <th>Confidence</th>
                         <th>Win / Lose</th>
+                        <th>Confidence</th>
                         <th>Points Earned</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for pick in current_entry %}
-                        {% if session_user == player %}
                             <tr>
-                                <td>{{ pick.is_complete }}</td>
-                                <td>{{ pick.nfl_game.home_team.name }}</td>
-                                <td>{{ pick.nfl_game.home_team_score }}</td>
-                                <td>{{ pick.nfl_game.away_team.name }}</td>
-                                <td>{{ pick.nfl_game.away_team_score }}</td>
+                                <td>{{ pick.nfl_game.game_time|date:"l h:i" }}</td>
+                                <td><a href="{{ pick.nfl_game.away_team.get_absolute_url }}">{{ pick.nfl_game.away_team.name }} @ </a><a href="{{ pick.nfl_game.home_team.get_absolute_url }}">{{ pick.nfl_game.home_team.name }}</a></td>
+                                <td>{{ pick.nfl_game.game_status }}</td>
+                                <td>{{ pick.nfl_game.get_winner_pretty }}</td>
+                                {% if session_user == player or pick.is_locked %}
                                 <td>{{ pick.projected_winner.name }}</td>
-                                <td>{{ pick.nfl_game.winner.name }}</td>
-                                <td>{{ pick.confidence }}</td>
-                                <td>{{ pick.is_winner|yesno:"Win,Lose,tbd" }}</td>
-                                <td>{{ pick.points_earned }}</td>
-                            </tr>
-                            {% else %}
-                                {% if pick.is_locked %}
-                                <tr>
-                                    <td>{{ pick.is_complete }}</td>
-                                    <td>{{ pick.nfl_game.home_team.name }}</td>
-                                    <td>{{ pick.nfl_game.home_team_score }}</td>
-                                    <td>{{ pick.nfl_game.away_team.name }}</td>
-                                    <td>{{ pick.nfl_game.away_team_score }}</td>
-                                    <td>{{ pick.projected_winner.name }}</td>
-                                    <td>{{ pick.nfl_game.winner.name }}</td>
-                                    <td>{{ pick.confidence }}</td>
-                                    <td>{{ pick.is_winner|yesno:"Win,Lose,tbd" }}</td>
-                                    <td>{{ pick.points_earned }}</td>
-                                </tr>
+                                <td style = "text-align: center;">{{ pick.is_winner|yesno:"Win,Lose,tbd" }}</td>
+                                <td style = "text-align: center;">{{ pick.confidence }}</td>
+                                <td style = "text-align: center;">{{ pick.points_earned }}</td>
+                                {% else %}
+                                <td style = "text-align: center;" colspan="5"><i>pick revealed at game time</i></td>
                                 {% endif %}
-                            {% endif %}
+                            </tr>
                     {% endfor %}
                 </tbody>
             </table>

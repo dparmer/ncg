@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from selenium import webdriver
 import requests
 
 
@@ -6,9 +7,12 @@ week = 12
 season = 2017
 
 nfl_com_url = 'http://www.nfl.com/scores/' + str(season) + '/REG' + str(week)
+browser = webdriver.Chrome()
+browser.get(nfl_com_url)
+response = browser.execute_script("return document.body.response")
 
-response = requests.get(nfl_com_url)
-html = BeautifulSoup(response.content, 'html.parser')
+#response = requests.get(nfl_com_url)
+html = BeautifulSoup(response, 'html.parser')
 
 div_box_scores = html.find_all("div", attrs={'class':"new-score-box-wrapper"})
 
@@ -17,7 +21,20 @@ games_list = []
 for box_score in div_box_scores:
 
     final_c = box_score.find(class_='time-left')
-    print('final->', final_c.contents[0].strip())
+    #print('final->', final_c.contents[0].strip())
+
+    in_prog_c = final_c.find(class_='down-yardline')
+
+    if not in_prog_c:
+        print('game is final', final_c.contents)
+        if final_c.contents[0].strip()[:5] == 'FINAL':
+            is_final = True
+        else:
+            is_final = False
+    else:
+        print('game in progress', in_prog_c)
+        # <span class="down-yardline">1st &amp; 10 IND 19</span>
+        is_final = False
 
     div_away_team = box_score.find("div", attrs={'class':"away-team"})
     div_home_team = box_score.find("div", attrs={'class':"home-team"})

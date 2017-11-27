@@ -8,11 +8,11 @@
     <div class="container-fluid">
 
         <div class="row">
-          <div class="col-sm-6">
+          <div class="col-sm-7">
               <h3>NFL Schedule Week {{ week }}</h3>
           </div>
-          <div class="col-sm-6">
-            <h3>Active Entries
+          <div class="col-sm-5">
+            <h3>Leader Board
                 {% if session_user.has_current_entry %}
                     <a class="btn btn-primary btn-md" href="/confidence/update_entry/{{ session_user.id }}/{{ week }}">Update Entry</a>
                 {% else %}
@@ -22,7 +22,7 @@
           </div>
         </div>
         <div class="row">
-            <div class="col-sm-6">
+            <div class="col-sm-7">
             <table class="table">
                 <thead>
                     <tr>
@@ -44,22 +44,28 @@
                 </tbody>
             </table>
             </div>
-               <div class="col-sm-6">
+               <div class="col-sm-5">
                    <table class="table">
                         <thead>
                             <tr>
+                                <th> </th>
+                                <th style = "text-align: center;" colspan="3">Points</th>
+                            </tr>
+                            <tr>
                                 <th>Player</th>
-                                <th>Current Points Total</th>
+                                <th>Earned</th>
+                                <th>Lost</th>
+                                <th>Remain</th>
                             </tr>
                         <tbody>
                             {% for plyr in players %}
                             <tr>
-                                {% if plyr == session_user %}
-                                <td><a href="{{ plyr.get_update_url }}">{{ plyr.first_name }} {{ plyr.last_name }}</a></td>
-                                {% else %}
-                                <td>{{ plyr.first_name }} {{ plyr.last_name }}</td>
-                                {% endif %}
-                                <td><a href="{{ plyr.get_absolute_url }}">{{ plyr.current_points }}</a></td>
+
+                                <td><a href="{{ plyr.get_absolute_url }}">{{ plyr.first_name }} {{ plyr.last_name }}</a></td>
+
+                                <td style = "text-align: center;">{{ plyr.current_points.points }}</td>
+                                <td style = "text-align: center;">{{ plyr.current_points.lost_points }}</td>
+                                <td style = "text-align: center;">{{ plyr.current_points.remain_points }}</td>
                             </tr>
                             {% endfor %}
                            </tbody>

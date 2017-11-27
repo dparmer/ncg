@@ -15,13 +15,18 @@ class EntryUpdateForm(ModelForm):
         print("EntryUpdateForm kwargs->", player_id, week )
         entries = Entry.get_player_entries(player=Player.get_player(id=player_id), week=week)
 
+        game_count = NflGame.get_game_count()
+        conf_choices = []
+        for cnt in range(1, game_count + 1):
+            conf_choices.append((cnt, str(cnt)))
+        print('EntryUpdateForm: conf choices->', conf_choices, game_count)
         for entry in entries:
             if entry.is_locked:
                 self.fields.update({'pick_' + str(entry.nfl_game.id): ChoiceField(widget = Select(), choices = ([(0,'None'),(1,entry.nfl_game.home_team.name), (2,entry.nfl_game.away_team.name), ]), initial=entry.pick_selection, disabled=True ) })
-                self.fields.update({'confidence_' + str(entry.nfl_game.id): IntegerField(widget = NumberInput(), initial=entry.confidence, disabled=True )  })
+                self.fields.update({'confidence_' + str(entry.nfl_game.id): ChoiceField(widget = Select(), choices=(conf_choices), initial=entry.confidence, disabled=True )  })
             else:
                 self.fields.update({'pick_' + str(entry.nfl_game.id): ChoiceField(widget = Select(), choices = ([(0,'None'),(1,entry.nfl_game.home_team.name), (2,entry.nfl_game.away_team.name), ]), initial=entry.pick_selection ) })
-                self.fields.update({'confidence_' + str(entry.nfl_game.id): IntegerField(widget = NumberInput(), initial=entry.confidence )  })
+                self.fields.update({'confidence_' + str(entry.nfl_game.id): ChoiceField(widget = Select(), choices=(conf_choices), initial=entry.confidence )  })
 
     def clean(self):
         cleaned_data=super(EntryUpdateForm, self).clean()
@@ -30,17 +35,19 @@ class EntryUpdateForm(ModelForm):
         for key, value in cleaned_data.items():
             fld_type, game_id = key.split('_')
             if fld_type == 'confidence':
-                values.append(value)
+                values.append(int(value))
 
                 print('value->', value, 'val-dict->', val_dict)
                 if value in val_dict:
                     print('val in val_dict')
                     raise forms.ValidationError("Confidence values must be unique")
 
-                val_dict[value] = 1
+                val_dict[int(value)] = 1
 
         values.sort()
-        if values[len(values)-1] - values[0] + 1 != len(values):
+        print('values->', values)
+        print('consec check->', int(values[len(values)-1]),int(values[0]) + 1, len(values))
+        if int(values[len(values)-1]) - int(values[0]) + 1 != len(values):
             raise forms.ValidationError("Confidence values must be consecutive")
 
 
