@@ -1,0 +1,40 @@
+{% extends "confidence/base.html" %}
+{% load staticfiles %}
+{% load tz %}
+{% block content %}
+{% localtime on %}
+
+<div class="jumbotron">
+    <div class="container-fluid">
+        <h3>{{ team.city }} {{ team.name }} Game History</h3>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Home Team</th>
+                        <th>Away Team</th>
+                        <th>Home Score</th>
+                        <th>Away Score</th>
+                        <th>Winner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for game in team_games.all %}
+                    <tr>
+                        <td>{{ game.game_time|timezone:"America/Chicago" }}</td>
+                        <td>{{ game.home_team.city }} {{ game.home_team.name }}</td>
+                        <td>{{ game.away_team.city }} {{ game.away_team.name }}</td>
+                        <td>{{ game.home_team_score }}</td>
+                        <td>{{ game.away_team_score }}</td>
+                        <td>{{ game.winner.city }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+    </div>
+</div>
+
+{% endlocaltime %}
+{% endblock %}}

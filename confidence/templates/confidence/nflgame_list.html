@@ -1,0 +1,80 @@
+{% extends "confidence/base.html" %}
+{% load staticfiles %}
+{% load tz %}
+{% block content %}
+{% localtime on %}
+
+<div class="jumbotron">
+    <div class="container-fluid">
+
+        <div class="row">
+          <div class="col-sm-7">
+              <h3>NFL Schedule Week {{ week }}</h3>
+          </div>
+          <div class="col-sm-5">
+            <h3>Leader Board
+                {% if session_user.has_current_entry %}
+                    <a class="btn btn-primary btn-md" href="/confidence/update_entry/{{ session_user.id }}/{{ week }}">Update Entry</a>
+                {% else %}
+                    <a class="btn btn-primary btn-md" href="/confidence/create_entry">Create Entry</a>
+                {% endif %}
+            </h3>
+          </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-7">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Game</th>
+                        <th>Status</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for game in current_games.all %}
+                    <tr>
+                        <td>{{ game.game_time|date:"l h:i" }}</td>
+                        <td><a href="{{ game.away_team.get_absolute_url }}">{{ game.away_team.name }} @ </a><a href="{{ game.home_team.get_absolute_url }}">{{ game.home_team.name }}</a></td>
+                        <td>{{ game.game_status }}</td>
+                        <td>{{ game.get_winner_pretty }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+               <div class="col-sm-5">
+                   <table class="table">
+                        <thead>
+                            <tr>
+                                <th> </th>
+                                <th style = "text-align: center;" colspan="3">Points</th>
+                            </tr>
+                            <tr>
+                                <th>Player</th>
+                                <th>Earned</th>
+                                <th>Lost</th>
+                                <th>Remain</th>
+                            </tr>
+                        <tbody>
+                            {% for plyr in players %}
+                            <tr>
+
+                                <td><a href="{{ plyr.get_absolute_url }}">{{ plyr.first_name }} {{ plyr.last_name }}</a></td>
+
+                                <td style = "text-align: center;">{{ plyr.current_points.points }}</td>
+                                <td style = "text-align: center;">{{ plyr.current_points.lost_points }}</td>
+                                <td style = "text-align: center;">{{ plyr.current_points.remain_points }}</td>
+                            </tr>
+                            {% endfor %}
+                           </tbody>
+                   </table>
+
+          </div>
+        </div>
+    </div>
+</div>
+
+{% endlocaltime %}
+{% endblock %}}
