@@ -156,9 +156,9 @@ class NflGame(models.Model):
     @property
     def losing_team(self):
         if self.winner == self.home_team:
-            return self.home_team
+            return 2
         else:
-            return self.away_team
+            return 1
 
     def get_winner_pretty(self):
         if self.is_final:
