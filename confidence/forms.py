@@ -77,22 +77,24 @@ class EntryAddForm(ModelForm):
                 self.fields.update({'confidence_' + str(game.id): ChoiceField(widget = Select(), choices=(conf_choices), initial=cnt )  })
 
     def clean(self):
-        cleaned_data=super(EntryAddForm, self).clean()
+        cleaned_data=super(EntryUpdateForm, self).clean()
         values = []
         val_dict = {}
         for key, value in cleaned_data.items():
             fld_type, game_id = key.split('_')
             if fld_type == 'confidence':
-                values.append(value)
+                values.append(int(value))
 
                 print('value->', value, 'val-dict->', val_dict)
                 if value in val_dict:
                     print('val in val_dict')
                     raise forms.ValidationError("Confidence values must be unique")
 
-                val_dict[value] = 1
+                val_dict[int(value)] = 1
 
         values.sort()
-        if values[len(values)-1] - values[0] + 1 != len(values):
+        print('values->', values)
+        print('consec check->', int(values[len(values)-1]),int(values[0]) + 1, len(values))
+        if int(values[len(values)-1]) - int(values[0]) + 1 != len(values):
             raise forms.ValidationError("Confidence values must be consecutive")
 
