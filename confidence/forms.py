@@ -70,7 +70,7 @@ class EntryAddForm(ModelForm):
             cnt += 1
             if game.is_final:
                 final_counter += 1
-                self.fields.update({'pick_' + str(game.id): ChoiceField(widget = Select(), choices = ([(0,'None'),(1,game.home_team.name), (2,game.away_team.name), ]), initial=game.losing_team, disabled=True ) })
+                self.fields.update({'pick_' + str(game.id): ChoiceField(widget = Select(), choices = ([(0,'None'),(1,game.home_team.name), (2,game.away_team.name), ]), initial=int(game.losing_team), disabled=True ) })
                 self.fields.update({'confidence_' + str(game.id): IntegerField(widget = NumberInput(), initial=final_counter, disabled=True )  })
             else:
                 self.fields.update({'pick_' + str(game.id): ChoiceField(widget = Select(), choices = ([(0,'None'),(1,game.home_team.name), (2,game.away_team.name), ]), initial=0 ) })
