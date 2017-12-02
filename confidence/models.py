@@ -153,6 +153,13 @@ class NflGame(models.Model):
     def __str__(self):
         return '%s %s %s %s' % (self.id, self.game_date, self.home_team.name, self.away_team.name)
 
+    @property
+    def losing_team(self):
+        if self.winner == self.home_team:
+            return self.home_team
+        else:
+            return self.away_team
+
     def get_winner_pretty(self):
         if self.is_final:
             if self.home_team_score > self.away_team_score:

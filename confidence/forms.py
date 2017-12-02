@@ -61,9 +61,20 @@ class EntryAddForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(EntryAddForm, self).__init__(*args, **kwargs)
         cnt = 0
+        final_counter = 0
+        game_count = NflGame.get_game_count()
+        conf_choices = []
+        for cnt in range(1, game_count + 1):
+            conf_choices.append((cnt, str(cnt)))
         for game in NflGame.current_games.all():
-            self.fields.update({'pick_' + str(game.id): ChoiceField(widget = Select(), choices = ([(0,'None'),(1,game.home_team.name), (2,game.away_team.name), ]), initial=0 ) })
-            self.fields.update({'confidence_' + str(game.id): IntegerField(widget = NumberInput(), initial=0 )  })
+            cnt += 1
+            if game.is_final:
+                final_counter += 1
+                self.fields.update({'pick_' + str(game.id): ChoiceField(widget = Select(), choices = ([(0,'None'),(1,game.home_team.name), (2,game.away_team.name), ]), initial=game.losing_team, disabled=True ) })
+                self.fields.update({'confidence_' + str(game.id): IntegerField(widget = NumberInput(), initial=final_counter, disabled=True )  })
+            else:
+                self.fields.update({'pick_' + str(game.id): ChoiceField(widget = Select(), choices = ([(0,'None'),(1,game.home_team.name), (2,game.away_team.name), ]), initial=0 ) })
+                self.fields.update({'confidence_' + str(game.id): ChoiceField(widget = Select(), choices=(conf_choices), initial=cnt )  })
 
     def clean(self):
         cleaned_data=super(EntryAddForm, self).clean()
