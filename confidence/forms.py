@@ -77,7 +77,7 @@ class EntryAddForm(ModelForm):
                 self.fields.update({'confidence_' + str(game.id): ChoiceField(widget = Select(), choices=(conf_choices), initial=cnt )  })
 
     def clean(self):
-        cleaned_data=super(EntryUpdateForm, self).clean()
+        cleaned_data=super(EntryAddForm, self).clean()
         values = []
         val_dict = {}
         for key, value in cleaned_data.items():
