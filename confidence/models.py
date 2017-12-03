@@ -169,6 +169,9 @@ class NflGame(models.Model):
         else:
             return "tbd"
 
+    def nfl_game_pretty(self):
+        return (self.away_team.name + " @ " + self.home_team.name)
+
     @classmethod
     def get_game_count(cls, week=None):
         season = NflGame.get_nfl_season()
@@ -179,6 +182,18 @@ class NflGame(models.Model):
         except Exception as inst:
             print(inst)
             return None
+
+    @classmethod
+    def get_remain_game_count(cls, week=None):
+        season = NflGame.get_nfl_season()
+        if not week:
+            week = NflGame.get_nfl_week()
+        try:
+            return cls.objects.filter(season=season, week=week, is_final=False, in_progress=False).count()
+        except Exception as inst:
+            print(inst)
+            return None
+
 
     def set_result(self, win_score, lose_score, winning_team=None, is_final=False, in_progress=False):
         self.winner = winning_team
@@ -255,6 +270,46 @@ class NflGame(models.Model):
             return None
 
 
+class PlayerEntry(models.Model):
+    id = models.AutoField(primary_key=True)
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='+', verbose_name='Player Entry')
+    season = models.IntegerField(verbose_name='Season')
+    week = models.IntegerField(verbose_name='Week')
+    is_active = models.BooleanField(verbose_name="Active Flag")
+
+    active_confidence_values = []
+
+    def get_entries(self):
+            return Entry.get_player_entries(player=self.player, week=self.week)
+
+    @classmethod
+    def get_entry(cls, player, season, week):
+        try:
+            return cls.objects.get(player=player, week=week, season=season)
+        except Exception as inst:
+            print(inst)
+            return None
+
+    @classmethod
+    def build_entry(cls):
+
+        dave = PlayerEntry(player=Player.objects.get(username='dave.parmer'),
+                    season=2017,
+                    week=13,
+                    is_active=True)
+        keith = PlayerEntry(player=Player.objects.get(username='keith.parmer'),
+                    season=2017,
+                    week=13,
+                    is_active=True)
+        sean = PlayerEntry(player=Player.objects.get(username='sean.parmer'),
+                    season=2017,
+                    week=13,
+                    is_active=True)
+
+        dave.save()
+        keith.save()
+        sean.save()
+
 class Entry(models.Model):
 
     winner_choices = ((1, 'Home Team'), (2, 'Away Team'))
@@ -313,6 +368,24 @@ class Entry(models.Model):
         except Exception as inst:
             print(inst)
             return None
+
+    @classmethod
+    def get_entry(cls, id=None, player=None, season=None, week=None, nfl_game=None):
+
+        if id:
+            try:
+                print('Entry:get_entry- id:', int(id))
+                return cls.objects.get(id=int(id))
+            except Exception as inst:
+                print('Entry:get_entry- Error:', inst)
+                return None
+        elif player and season and week and nfl_game:
+            try:
+                print('Entry:get_entry- input:', player, season, week, nfl_game)
+                return cls.objects.get(player=player, season=season, week=week, nfl_game=nfl_game)
+            except Exception as inst:
+                print('Entry:get_entry- Error:', inst)
+                return None
 
     @classmethod
     def get_player_entries(cls, player, week):

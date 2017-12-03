@@ -12,6 +12,8 @@ urlpatterns = [
     url(r'^current_entry/$', views.PlayerEntryList.as_view(), name='current_entry_list'),
     url(r'^create_entry/$', views.CreateEntry.as_view(), name='create_entry'),
     url(r'^update_entry/(?P<player_id>[0-9]+)/(?P<week>[0-9]+)/$', views.UpdateEntry.as_view(), name='update_entry'),
+    url(r'^sort_entry/(?P<pk>[0-9]+)/$', views.SortEntry.as_view(), name='sort_entry'),
+    url(r'^jquery/resort_entry/$', views.resort_entry, name='resort_entry'),
 
 ]
 

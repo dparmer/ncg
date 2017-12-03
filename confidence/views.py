@@ -2,11 +2,13 @@ from django.shortcuts import render
 from django.views.generic.list import ListView
 from django.views.generic import CreateView, UpdateView
 from django.contrib.auth.views import LoginView, LogoutView
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, QueryDict
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 from django.urls import reverse
-from .models import NflGame, NflTeam, Entry, Player, NflGameMgr
+from .models import NflGame, NflTeam, Entry, Player, NflGameMgr, PlayerEntry
 from .forms import EntryAddForm, EntryUpdateForm
-
+import random
 
 def get_menu_list():
 
@@ -81,6 +83,7 @@ class NflGameList(ListView):
             player.check_entry()
             Entry.set_entry_locks()
             NflGameMgr.game_score_update()
+            #PlayerEntry.build_entry()
             return super(NflGameList, self).get(request, *args, **kwargs)
         else:
             print('NflGameList:not_authenticated_get->', request.user)
@@ -141,7 +144,7 @@ class UpdateEntry(CreateView):
         for game in NflGame.current_games.all():
             game_dict['game'] = game
             game_dict['pick'] = pick_fld_dict['pick_'+ str(game.id)]
-            game_dict['conf'] = conf_fld_dict['confidence_'+ str(game.id)]
+            #game_dict['conf'] = conf_fld_dict['confidence_'+ str(game.id)]
             game_list.append(game_dict.copy())
             #print('field->', game_dict['pick'], game_dict['conf'])
             game_dict.clear()
@@ -171,9 +174,10 @@ class UpdateEntry(CreateView):
                     #data = form.cleaned_data.copy()
                     player = Player.get_player(request.user.username)
                     #data['player'].delete()
-                    conf_dict = {}
+                    #conf_dict = {}
                     pick_dict = {}
                     game_dict = {}
+                    season = NflGame.get_nfl_season()
                     week = NflGame.get_nfl_week()
                     for key, value in form.cleaned_data.items():
                         fld_type, game_id = key.split('_')
@@ -182,27 +186,31 @@ class UpdateEntry(CreateView):
                             pick_dict[game_id] = value
                             game = NflGame.get_game(id=game_id)
                             game_dict[game_id] = game
-                        elif fld_type == 'confidence':
-                            conf_dict[game_id] = int(value)
+                        #elif fld_type == 'confidence':
+                            #conf_dict[game_id] = int(value)
                     """ Clear the previous data  """
-                    Entry.objects.filter(player=player, week=week).delete()
+
+                    #Entry.objects.filter(player=player, week=week).delete()
 
                     for game_id, game in game_dict.items():
+                        entry = Entry.get_entry(player=player, season=season, week=week, nfl_game=game)
+
                         if pick_dict[game_id] == '1':
                             projected_winner = game.home_team
                         elif pick_dict[game_id] == '2':
                             projected_winner = game.away_team
                         else:
                             projected_winner = None
-
-                        e = Entry(player=player, season=game.season, week=game.week, nfl_game=game,
-                                  is_winner=None, confidence=int(conf_dict[game_id]),
-                                  pick_selection=int(pick_dict[game_id]), projected_winner=projected_winner)
-                        e.save()
+                        entry.pick_selection = int(pick_dict[game_id])
+                        entry.projected_winner = projected_winner
+                        # e = Entry(player=player, season=game.season, week=game.week, nfl_game=game,
+                        #           is_winner=None, confidence=int(conf_dict[game_id]),
+                        #           pick_selection=int(pick_dict[game_id]), projected_winner=projected_winner)
+                        entry.save()
                         player.set_entry()
-                        print('e->', e.player.first_name, e.id, game.season, game.week, projected_winner.name)
-
-                    return HttpResponseRedirect(reverse('player_entry_list', kwargs={'player_id': player.id, 'week': week}))
+                        print('e->', entry.player.first_name, entry.id, game.season, game.week, projected_winner.name)
+                    player_entry = PlayerEntry.get_entry(player=player, week=week, season=NflGame.get_nfl_season())
+                    return HttpResponseRedirect(reverse('sort_entry', kwargs={'pk': player_entry.id}))
                 else:
                     print("form not valid", form.errors)
                     return super(UpdateEntry, self).post(request, *args, **kwargs)
@@ -241,7 +249,7 @@ class CreateEntry(CreateView):
         for game in NflGame.current_games.all():
             game_dict['game'] = game
             game_dict['pick'] = pick_fld_dict['pick_'+ str(game.id)]
-            game_dict['conf'] = conf_fld_dict['confidence_'+ str(game.id)]
+            #game_dict['conf'] = conf_fld_dict['confidence_'+ str(game.id)]
             game_list.append(game_dict.copy())
             #print('field->', game_dict['pick'], game_dict['conf'])
             game_dict.clear()
@@ -275,6 +283,24 @@ class CreateEntry(CreateView):
                     pick_dict = {}
                     game_dict = {}
                     week = NflGame.get_nfl_week()
+                    season = NflGame.get_nfl_season()
+                    game_count = NflGame.get_game_count()
+                    remain_game_count = NflGame.get_remain_game_count()
+                    played_games = game_count - remain_game_count
+                    conf_range = []
+
+                    """ sanity check-  delete any games (should be none) """
+                    try:
+                        Entry.objects.filter(player=player, season=season, week=week).delete()
+                    except Exception as inst:
+                        print("error deleting entries", inst)
+
+                    for count in range(played_games + 1,game_count + 1):
+                        conf_range.append(count)
+                    print('conf_range->', conf_range)
+                    shuff_conf_range = random.sample(conf_range, len(conf_range))
+                    print('shuffled conf_range->', shuff_conf_range)
+
                     for key, value in form.cleaned_data.items():
                         fld_type, game_id = key.split('_')
 
@@ -282,25 +308,50 @@ class CreateEntry(CreateView):
                             pick_dict[game_id] = value
                             game = NflGame.get_game(id=game_id)
                             game_dict[game_id] = game
-                        elif fld_type == 'confidence':
-                            conf_dict[game_id] = value
 
+                        # elif fld_type == 'confidence':
+                        #     conf_dict[game_id] = value
+
+                    pe = PlayerEntry(player=player, season=NflGame.get_nfl_season(), week=NflGame.get_nfl_week(),
+                                     is_active=True)
+                    pe.save()
+                    conf_complete_game = 0
+                    conf_index = 0
+                    print("game_dict->", game_dict)
                     for game_id, game in game_dict.items():
-                        if pick_dict[game_id] == '1':
-                            projected_winner = game.home_team
-                        elif pick_dict[game_id] == '2':
-                            projected_winner = game.away_team
+                        if game.is_final or game.in_progress:
+                            print("game is final->", game)
+                            if game.winner == game.home_team:
+                                projected_winner = game.away_team
+                            elif game.winner == game.away_team:
+                                projected_winner = game.home_team
+                            else:
+                                projected_winner = None
+                            conf_complete_game += 1
+                            conf_dict[game_id] = conf_complete_game
+                            e = Entry(player=player, season=game.season, week=game.week, nfl_game=game,
+                                      is_winner=None, confidence=int(conf_dict[game_id]),
+                                      pick_selection=int(pick_dict[game_id]), projected_winner=projected_winner, is_locked=True)
+                            e.save()
                         else:
-                            projected_winner = None
+                            print("game is future->", game)
+                            if pick_dict[game_id] == '1':
+                                projected_winner = game.home_team
+                            elif pick_dict[game_id] == '2':
+                                projected_winner = game.away_team
+                            else:
+                                projected_winner = None
+                            conf_dict[game_id] = shuff_conf_range[conf_index]
+                            conf_index += 1
+                            e = Entry(player=player, season=game.season, week=game.week, nfl_game=game,
+                                      is_winner=None, confidence=int(conf_dict[game_id]),
+                                      pick_selection=int(pick_dict[game_id]), projected_winner=projected_winner)
+                            e.save()
 
-                        e = Entry(player=player, season=game.season, week=game.week, nfl_game=game,
-                                  is_winner=None, confidence=int(conf_dict[game_id]),
-                                  pick_selection=int(pick_dict[game_id]), projected_winner=projected_winner)
-                        e.save()
                         player.set_entry()
                         print('e->', e.player.first_name, e.id, game.season, game.week, projected_winner.name)
-
-                    return HttpResponseRedirect(reverse('player_entry_list', kwargs={'player_id': player.id, 'week': week}))
+                    player_entry = PlayerEntry.get_entry(player=player, week=week, season=season)
+                    return HttpResponseRedirect(reverse('sort_entry', kwargs={'pk': player_entry.id}))
                 else:
                     print("form not valid", form.errors)
                     return super(CreateEntry, self).post(request, *args, **kwargs)
@@ -312,3 +363,42 @@ class CreateEntry(CreateView):
             # Do something for anonymous users.
             print('CreateEntry:not_authenticated_post->', request.user)
             return HttpResponseRedirect(reverse('login'))
+
+
+class SortEntry(UpdateView):
+    model = PlayerEntry
+    fields = ['player', 'season', 'week', 'is_active']
+    template_name = 'confidence/sort_entry.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(SortEntry, self).get_context_data(**kwargs)
+        player_entries = self.object.get_entries()
+        self.object.active_confidence_values.clear()
+        for entry in player_entries:
+            if not entry.is_locked:
+                self.object.active_confidence_values.append(entry.confidence)
+
+        print('SortEntry: active_confidence_values->', self.object.active_confidence_values)
+        game_conf_index = []
+        for cntr in range(NflGame.get_game_count(NflGame.get_nfl_week()),0,-1):
+            game_conf_index.append(cntr)
+        context['index'] = game_conf_index
+        context['entry_list'] = player_entries
+        context['menu'] = get_menu_list()
+
+        return context
+
+
+def resort_entry(request):
+    entries = QueryDict(request.POST['content'])
+    for index, entry_id in enumerate(entries.getlist('entry[]')):
+        entry = Entry.get_entry(id=entry_id)
+        player_entry = PlayerEntry.get_entry(player=entry.player, week=entry.week, season=entry.season)
+
+        orig_conf = entry.confidence
+        entry.confidence = player_entry.active_confidence_values[index]
+        entry.save()
+
+        print('index->', index, 'entry_id->', entry_id, entry.projected_winner, player_entry.active_confidence_values[index], "orig->", orig_conf)
+        # save index of entry_id as it's new order value
+    return HttpResponseRedirect(reverse('sort_entry', kwargs={'pk': player_entry.id}))

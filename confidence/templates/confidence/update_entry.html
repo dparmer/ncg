@@ -34,7 +34,7 @@
                     <h2>NFL Schedule</h2>
                 </div>
                 <div class="col-sm-4">
-                        <input class="btn btn-primary btn-md" type="submit" value="Submit Entry">
+                        <input class="btn btn-primary btn-md" type="submit" value="Rank Picks">
                 </div>
             <div class="row">
                 <table class="table">
@@ -45,7 +45,6 @@
                             <th>Home Team</th>
                             <th>Away Team</th>
                             <th>Pick</th>
-                            <th>Confidence Score</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -56,7 +55,6 @@
                             <td><a href="{{ x.game.home_team.get_absolute_url }}">{{ x.game.home_team.city }} {{ x.game.home_team.name }}</a></td>
                             <td><a href="{{ x.game.away_team.get_absolute_url }}">{{ x.game.away_team.city }} {{ x.game.away_team.name }}</a></td>
                             <td>{{ x.pick }}</td>
-                            <td>{{ x.conf }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -1,0 +1,92 @@
+{% extends "confidence/base.html" %}
+{% load staticfiles %}
+{% load tz %}
+{% block content %}
+{% localtime on %}
+
+
+
+<head>
+<meta charset="utf-8">
+<title>sortable entry list</title>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script type="text/javascript" language="javascript">
+  $(document).ready(function() {
+    $("#sortable1").sortable({
+      connectWith: ".connectedSortable",
+      update: function(event, ui) {
+          console.log("sortable1")
+          var serial = $('#sortable1').sortable('serialize');
+          var form = $(this).closest("form");
+
+        $.ajax({
+            url: form.attr("resort_entry-url"),
+            type: "post",
+            data: { 'content': serial, 'csrfmiddlewaretoken' : '{{ csrf_token }}' }
+        });
+      },
+    }).disableSelection();
+  });
+</script>
+
+
+
+</head>
+
+<div class="jumbotron">
+    <div class="container-fluid">
+    <h3>Drag and drop the list to change the order</h3>
+{#    <form method="post" resort_entry-url="{% url 'sort_entry' pk=object.id %}">#}
+{#    <form action="{% url 'sort_entry' pk=object.id %}" method="POST" id=post-form">#}
+    <form method="post" resort_entry-url="{% url 'resort_entry' %}">
+    {% csrf_token %}
+        <a class="btn btn-primary btn-md" href="/confidence/current_games_list" >Submit Entry</a>
+        <div class="row">
+
+            <div class="col-sm-12">
+                <ol id="sortable1" class="list-group" style="list-style: decimal inside;">
+                {% for entry in entry_list %}
+                  
+                    {% if entry.is_locked == False %}
+                    
+
+                    <li id="entry_{{ entry.id }}" class="list-group-item" value="{{ entry.confidence }}">
+                      Projected Winner- <strong>{{ entry.projected_winner.name }}</strong> | Game- {{ entry.nfl_game.nfl_game_pretty }}
+                      <span class="badge">{{ entry.confidence }}</span>
+
+{#                      Winner-> {{ entry.projected_winner.name }} {{ entry.nfl_game.nfl_game_pretty }}#}
+                  </li>
+                     {% endif %}
+                {% endfor %}
+                </ol>
+                <h3>Games below are locked</h3>
+                <ol class="list-group" style="list-style: decimal inside;">
+                {% for entry in entry_list %}
+
+                    {% if entry.is_locked == True %}
+
+
+                    <li id="entry_{{ entry.id }}" class="list-group-item" value="{{ forloop.counter }}">
+                      Projected Winner- <strong>{{ entry.projected_winner.name }}</strong> | Game- {{ entry.nfl_game.nfl_game_pretty }}
+                      <span class="badge">{{ entry.confidence }}</span>
+
+{#                      Winner-> {{ entry.projected_winner.name }} {{ entry.nfl_game.nfl_game_pretty }}#}
+                  </li>
+                     {% endif %}
+                {% endfor %}
+                </ol>
+
+            </div>
+
+        </div>
+
+    </form>
+</div>
+</div>
+
+
+{% endlocaltime %}
+{% endblock %}
