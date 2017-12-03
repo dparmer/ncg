@@ -305,10 +305,15 @@ class PlayerEntry(models.Model):
                     season=2017,
                     week=13,
                     is_active=True)
+        scott = PlayerEntry(player=Player.objects.get(username='scott.parmer'),
+                    season=2017,
+                    week=13,
+                    is_active=True)
 
         dave.save()
         keith.save()
         sean.save()
+        scott.save()
 
 class Entry(models.Model):
 

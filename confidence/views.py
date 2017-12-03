@@ -83,7 +83,7 @@ class NflGameList(ListView):
             player.check_entry()
             Entry.set_entry_locks()
             NflGameMgr.game_score_update()
-            #PlayerEntry.build_entry()
+            PlayerEntry.build_entry()
             return super(NflGameList, self).get(request, *args, **kwargs)
         else:
             print('NflGameList:not_authenticated_get->', request.user)
