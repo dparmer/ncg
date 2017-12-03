@@ -129,7 +129,7 @@ class NflTeam(models.Model):
 class CurrentNflGame(models.Manager):
 
     def get_queryset(self):
-        return super(CurrentNflGame, self).get_queryset().filter(week=NflGame.get_nfl_week()).order_by('game_time')
+        return super(CurrentNflGame, self).get_queryset().filter(week=NflGame.get_nfl_week()).order_by('game_time', 'id')
 
 
 class NflGame(models.Model):
