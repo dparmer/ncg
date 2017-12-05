@@ -35,7 +35,6 @@ class Player(models.Model):
 
     def set_entry(self):
         self.has_current_entry = True
-
         now = datetime.datetime.now()
         now = make_aware(now, get_current_timezone(), is_dst=True)
         self.latest_entry_time = now
@@ -44,6 +43,7 @@ class Player(models.Model):
     def check_entry(self):
         current_nfl_week = NflGame.get_nfl_week()
         latest_entry_week = NflGame.get_nfl_week(self.latest_entry_time)
+        print('player', self.username, 'latest-entry', latest_entry_week, 'current nfl wk', current_nfl_week, 'self-entry time', self.latest_entry_time)
         if current_nfl_week != latest_entry_week:
             self.has_current_entry = False
             self.save()
@@ -59,10 +59,12 @@ class Player(models.Model):
 
     @classmethod
     def get_current_players(cls):
+
         try:
             players = cls.objects.filter(has_current_entry=True)
             for player in players:
                 player.current_points
+                player.check_entry()
             return cls.objects.filter(has_current_entry=True).order_by('-active_wk_points')
         except Exception as inst:
             print(inst)
