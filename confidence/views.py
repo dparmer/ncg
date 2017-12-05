@@ -87,7 +87,10 @@ class NflGameList(ListView):
             player_pts.append(player.current_points['points'])
             player_lost_pts.append(player.current_points['lost_points'])
             player_rem_pts.append(player.current_points['remain_points'])
-
+        player_list.reverse()
+        player_pts.reverse()
+        player_lost_pts.reverse()
+        player_rem_pts.reverse()
         trace1 = go.Bar(
             y=player_list,
             x=player_pts,
