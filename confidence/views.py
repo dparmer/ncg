@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.views.generic.list import ListView
-from django.views.generic import CreateView, UpdateView
+from django.views.generic import CreateView, UpdateView, TemplateView
 from django.contrib.auth.views import LoginView, LogoutView
 from django.http import HttpResponseRedirect, Http404, QueryDict
 from django.shortcuts import render_to_response
@@ -9,6 +9,8 @@ from django.urls import reverse
 from .models import NflGame, NflTeam, Entry, Player, NflGameMgr, PlayerEntry
 from .forms import EntryAddForm, EntryUpdateForm
 import random
+import plotly.offline as opy
+import plotly.graph_objs as go
 
 def get_menu_list():
 
@@ -72,7 +74,70 @@ class NflGameList(ListView):
         context['week'] = NflGame.get_nfl_week()
         context['season'] = NflGame.get_nfl_season()
         context['menu'] = get_menu_list()
-        context['players'] = Player.get_current_players()
+        players = Player.get_current_players()
+        context['players'] = players
+
+        player_list = []
+        player_pts = []
+        player_lost_pts =[]
+        player_rem_pts = []
+        for player in players:
+            print("player points->", player.current_points)
+            player_list.append(player.first_name + " " + player.last_name)
+            player_pts.append(player.current_points['points'])
+            player_lost_pts.append(player.current_points['lost_points'])
+            player_rem_pts.append(player.current_points['remain_points'])
+
+        trace1 = go.Bar(
+            y=player_list,
+            x=player_pts,
+            name='Points',
+            orientation = 'h',
+            marker = dict(
+                color = 'rgba(51, 204, 51, 0.6)',
+                line = dict(
+                    color = 'rgba(51, 204, 51, 1.0)',
+                    width = 1)
+            )
+        )
+        trace2 = go.Bar(
+            y=player_list,
+            x=player_rem_pts,
+            name='Remaining Points',
+            orientation = 'h',
+            marker = dict(
+                color = 'rgba(0, 153, 255, 0.6)',
+                line = dict(
+                    color = 'rgba(0, 153, 255, 1.0)',
+                    width = 1)
+            )
+        )
+        trace3 = go.Bar(
+            y=player_list,
+            x=player_lost_pts,
+            name='Lost Points',
+            orientation = 'h',
+            marker = dict(
+                color = 'rgba(204, 51, 0, 0.6)',
+                line = dict(
+                    color = 'rgba(204, 51, 0, 1.0)',
+                    width = 1)
+            )
+        )
+
+        data = [trace1, trace2, trace3]
+        layout = go.Layout(
+            barmode='stack',
+            showlegend=False
+        )
+
+        fig = go.Figure(data=data, layout=layout)
+        div = opy.plot(fig, filename='marker-h-bar', output_type='div')
+
+
+        context['graph'] = div
+
+
         return context
 
     def get(self, request, *args, **kwargs):

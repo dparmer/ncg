@@ -4,6 +4,7 @@
 {% block content %}
 {% localtime on %}
 
+
 <div class="jumbotron">
     <div class="container-fluid">
 
@@ -70,11 +71,17 @@
                             {% endfor %}
                            </tbody>
                    </table>
-
+               {% if graph %}
+                <div style="width:300;height:500">
+                {{ graph|safe }}
+                </div>
+                {% endif %}
           </div>
         </div>
     </div>
+
 </div>
+
 
 {% endlocaltime %}
 {% endblock %}}
