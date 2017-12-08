@@ -41,8 +41,10 @@ class PlayerEntryList(ListView):
         else:
             week = NflGame.get_nfl_week()
         season = NflGame.get_nfl_season()
-
-        context['current_entry'] = Entry.get_player_entries(player=player, week=week)
+        if session_user == player:
+            context['current_entry'] = Entry.get_player_entries(player=player, week=week)
+        else:
+            context['current_entry'] = Entry.get_player_entries(player=player, week=week, sort='date')
         context['menu'] = get_menu_list()
         context['player'] = player
         context['session_user'] = session_user

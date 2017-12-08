@@ -395,9 +395,12 @@ class Entry(models.Model):
                 return None
 
     @classmethod
-    def get_player_entries(cls, player, week):
+    def get_player_entries(cls, player, week, sort=None):
         try:
-            return cls.objects.filter(week=week, player=player).order_by("-confidence")
+            if sort == 'date':
+                return cls.objects.filter(week=week, player=player).order_by("-id")
+            else:
+                return cls.objects.filter(week=week, player=player).order_by("-confidence")
         except Exception as inst:
             print(inst)
             return None
