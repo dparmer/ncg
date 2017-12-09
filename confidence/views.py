@@ -133,7 +133,9 @@ class NflGameList(ListView):
         data = [trace1, trace2, trace3]
         layout = go.Layout(
             barmode='stack',
-            showlegend=False
+            showlegend=False,
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)'
         )
 
         fig = go.Figure(data=data, layout=layout)
