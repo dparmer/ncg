@@ -25,8 +25,8 @@ class NflGameAdmin(admin.ModelAdmin):
 
 
 class NflTeamAdmin(admin.ModelAdmin):
-    fields = ['city', 'name', 'short_name', 'wins', 'losses' ]
-    list_display = ['id', 'name', 'short_name', 'wins', 'losses']
+    fields = ['city', 'name', 'short_name', 'wins', 'losses', 'alias' ]
+    list_display = ['id', 'name', 'short_name', 'wins', 'losses', 'alias']
 
 
 class EntryAdmin(admin.ModelAdmin):
