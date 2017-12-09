@@ -1,23 +1,38 @@
 from bs4 import BeautifulSoup
 import requests
+import re
 
 
 week = 12
 season = 2017
 
-cbs_com_url = 'https://www.cbssports.com/nfl/scoreboard/all/' + str(season) + '/regular/' + str(week) + "/"
+footballlocks_com_url = 'http://www.footballlocks.com/nfl_lines.shtml'
 
-response = requests.get(cbs_com_url)
+response = requests.get(footballlocks_com_url)
 html = BeautifulSoup(response.content, 'html.parser')
-#
-div_box_scores = html.find_all("div", attrs={'class':"single-score-card  ingame nfl"})
-
-game_dict = {}
 games_list = []
-for box_score in div_box_scores:
-
-    game_status_c = box_score.find(class_='game-status emphasis')
-    print('game_status_c->', game_status_c)
+columns = html.find_all("td")
+game_data = []
+begin = 0
+count = 0
+for col in columns:
+    date_col = re.match( r'(\d+)/(\d+) \d+:\d+ ET', col.text)
+    if date_col:
+        begin += 1
+        count = 0
+        continue
+    if begin > 0:
+        count += 1
+        hometeam = re.match(r'At (\D+)', col.text)
+        if hometeam:
+            game_data.append(hometeam.group(1))
+        else:
+            game_data.append(col.text)
+        if count > 3:
+            games_list.append(game_data.copy())
+            game_data.clear()
+            begin = 0
+print(games_list)
 
 
 

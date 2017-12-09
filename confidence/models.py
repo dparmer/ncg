@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import requests
 import pytz
 from django.utils.timezone import get_current_timezone, make_aware
+import re
 
 
 # Create your models here.
@@ -93,6 +94,7 @@ class NflTeam(models.Model):
     short_name = models.CharField(max_length=3, verbose_name='Team Short Name')
     wins = models.IntegerField(verbose_name='Wins')
     losses = models.IntegerField(verbose_name='Losses')
+    alias = models.CharField(max_length=30, verbose_name='Team Alias', default=None, null=True, blank=True)
 
     def __str__(self):
         return '%s %s %s' % (self.id, self.city, self.name)
@@ -120,6 +122,15 @@ class NflTeam(models.Model):
             except Exception as inst:
                 print(inst)
                 return None
+        elif city:
+            try:
+                return cls.objects.get(city=city)
+            except Exception as inst:
+                try:
+                    return cls.objects.get(alias=city)
+                except Exception as inst:
+                    print(inst)
+                    return None
         else:
             print('args not correct')
             return None
@@ -149,11 +160,15 @@ class NflGame(models.Model):
     is_final = models.BooleanField(verbose_name='Game Complete')
     in_progress = models.BooleanField(verbose_name='Game In Progress', default=False)
     game_status = models.CharField(max_length=15, verbose_name='Game Status', default='Scheduled')
+    home_team_line = models.FloatField(verbose_name="Home Team Line", default=0, null=True)
+    away_team_line = models.FloatField(verbose_name="Away Team Line", default=0, null=True)
     objects = models.Manager()
     current_games = CurrentNflGame()
 
     def __str__(self):
-        return '%s %s %s %s' % (self.id, self.game_date, self.home_team.name, self.away_team.name)
+        return '%s %s %s %s %s %s' % (self.id, self.game_date,
+                                self.home_team.name, self.home_team_line,
+                                self.away_team.name, self.away_team_line )
 
     @property
     def losing_team(self):
@@ -161,6 +176,20 @@ class NflGame(models.Model):
             return 2
         else:
             return 1
+
+    @property
+    def home_team_wline(self):
+        if self.home_team_line < 0:
+            return self.home_team.name + "(" + str(self.home_team_line) + ")"
+        else:
+            return self.home_team.name
+
+    @property
+    def away_team_wline(self):
+        if self.away_team_line < 0:
+            return self.away_team.name + "(" + str(self.away_team_line) + ")"
+        else:
+            return self.away_team.name
 
     def get_winner_pretty(self):
         if self.is_final:
@@ -172,7 +201,7 @@ class NflGame(models.Model):
             return "tbd"
 
     def nfl_game_pretty(self):
-        return (self.away_team.name + " @ " + self.home_team.name)
+        return (self.away_team_wline + " @ " + self.home_team_wline)
 
     @classmethod
     def get_game_count(cls, week=None):
@@ -247,8 +276,12 @@ class NflGame(models.Model):
             try:
                 return NflGame.objects.get(week=week, home_team=home_team, away_team=away_team)
             except Exception as inst:
-                print(inst)
-                return None
+                """ try reverse in case we do not know home vs away teams  """
+                try:
+                    return NflGame.objects.get(week=week, home_team=away_team, away_team=home_team)
+                except Exception as inst:
+                    print(inst)
+                    return None
         elif away_team and week:
             try:
                 return NflGame.objects.get(week=week, away_team=away_team)
@@ -505,6 +538,51 @@ class NflGameMgr(models.Manager):
             else:
                 print('game not found')
 
+
+    @classmethod
+    def game_line_update(cls, week=None):
+        footballlocks_com_url = 'http://www.footballlocks.com/nfl_lines.shtml'
+
+        response = requests.get(footballlocks_com_url)
+        html = BeautifulSoup(response.content, 'html.parser')
+        games_list = []
+        columns = html.find_all("td")
+        game_data = []
+        begin = 0
+        count = 0
+        for col in columns:
+            date_col = re.match( r'(\d+)/(\d+) \d+:\d+ ET', col.text)
+            if date_col:
+                begin += 1
+                count = 0
+                continue
+            if begin > 0:
+                count += 1
+                hometeam = re.match(r'At (\D+)', col.text)
+                if hometeam:
+                    game_data.append(hometeam.group(1))
+                else:
+                    game_data.append(col.text)
+                if count > 3:
+                    games_list.append(game_data.copy())
+                    game_data.clear()
+                    begin = 0
+
+        for game in games_list:
+            team1 = NflTeam.get_team(city=game[0])
+            team2 = NflTeam.get_team(city=game[2])
+            nfl_game = NflGame.get_game(week=NflGame.get_nfl_week(), home_team=team1, away_team=team2)
+            team1_line = float(game[1])
+            team2_line = abs(float(game[1]))
+            if team1 == nfl_game.home_team:
+                nfl_game.home_team_line = team1_line
+                nfl_game.away_team_line = team2_line
+            else:
+                nfl_game.home_team_line = team2_line
+                nfl_game.away_team_line = team1_line
+            nfl_game.save()
+            print("set line-", nfl_game)
+
     @classmethod
     def game_score_update(cls, week=None):
 
@@ -616,6 +694,7 @@ class NflGameMgr(models.Manager):
                     print('game updated->', game)
                 else:
                     print('game not found', game)
+        NflGameMgr.game_line_update()
 
 
     @classmethod

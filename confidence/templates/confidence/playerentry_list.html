@@ -35,7 +35,7 @@
                     {% for pick in current_entry %}
                             <tr>
                                 <td>{{ pick.nfl_game.game_time|date:"l h:i" }}</td>
-                                <td><a href="{{ pick.nfl_game.away_team.get_absolute_url }}">{{ pick.nfl_game.away_team.name }} @ </a><a href="{{ pick.nfl_game.home_team.get_absolute_url }}">{{ pick.nfl_game.home_team.name }}</a></td>
+                                <td><a href="{{ pick.nfl_game.away_team.get_absolute_url }}">{{ pick.nfl_game.away_team_wline }} @ </a><a href="{{ pick.nfl_game.home_team.get_absolute_url }}">{{ pick.nfl_game.home_team_wline }}</a></td>
                                 <td>{{ pick.nfl_game.game_status }}</td>
                                 <td>{{ pick.nfl_game.get_winner_pretty }}</td>
                                 {% if session_user == player or pick.is_locked %}

@@ -52,8 +52,8 @@
                         <tr>
                             <td>{{ x.game.game_time|timezone:"America/Chicago" }}</td>
                             <td> {{ x.game.id }}</td>
-                            <td><a href="{{ x.game.home_team.get_absolute_url }}">{{ x.game.home_team.city }} {{ x.game.home_team.name }}</a></td>
-                            <td><a href="{{ x.game.away_team.get_absolute_url }}">{{ x.game.away_team.city }} {{ x.game.away_team.name }}</a></td>
+                            <td><a href="{{ x.game.home_team.get_absolute_url }}">{{ x.game.home_team.city }} {{ x.game.home_team_wline }}</a></td>
+                            <td><a href="{{ x.game.away_team.get_absolute_url }}">{{ x.game.away_team.city }} {{ x.game.away_team_wline }}</a></td>
                             <td>{{ x.pick }}</td>
                         </tr>
                         {% endfor %}

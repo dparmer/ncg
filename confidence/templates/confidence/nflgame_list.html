@@ -37,7 +37,7 @@
                     {% for game in current_games.all %}
                     <tr>
                         <td>{{ game.game_time|date:"l h:i" }}</td>
-                        <td><a href="{{ game.away_team.get_absolute_url }}">{{ game.away_team.name }} @ </a><a href="{{ game.home_team.get_absolute_url }}">{{ game.home_team.name }}</a></td>
+                        <td><a href="{{ game.away_team.get_absolute_url }}">{{ game.away_team_wline }} @ </a><a href="{{ game.home_team.get_absolute_url }}">{{ game.home_team_wline }}</a></td>
                         <td>{{ game.game_status }}</td>
                         <td>{{ game.get_winner_pretty }}</td>
                     </tr>
