@@ -18,10 +18,58 @@ def get_menu_list():
                   ('NFL Schedule', 'confidence/current_games_list'),
                   ('Logout', 'login'),
                   ('Current Entry', 'confidence/current_entry'),
-
+                  ('Results', 'confidence/results_list')
                   )
     print("WelcomePageView: get_menu_list: list->", menu_items)
     return menu_items
+
+
+class ResultsList(ListView):
+    model = Entry
+    template_name = 'confidence/results_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ResultsList, self).get_context_data(**kwargs)
+        session_user = Player.get_player(context['view'].request.user.username)
+        if 'player_id' in self.kwargs:
+            player = Player.get_player(id=self.kwargs['player_id'])
+        else:
+            player = Player.get_player(context['view'].request.user.username)
+
+
+
+        current_week = NflGame.get_nfl_week()
+        season = NflGame.get_nfl_season()
+        results = []
+
+        week = {}
+
+        for wk in range(13, current_week + 1):
+            week['value'] = wk
+            if wk == NflGame.get_nfl_week():
+                week['tab_class'] = 'tab-pane active'
+            else:
+                week['tab_class'] = 'tab-pane'
+            week['players'] = PlayerEntry.objects.filter(season=NflGame.get_nfl_season(), week=wk).order_by('-points_earned')
+
+            results.append(week.copy())
+            week.clear()
+
+        print('ResultsList: results->', results)
+
+        # results[13] = week{}
+        # week[‘value’] = week#
+        # week[‘tab_class’] = ‘tab-pane active’ | ‘tab-pane’
+        # week[‘players’] = player_entry[]
+
+        context['results'] = results
+        context['menu'] = get_menu_list()
+        context['player'] = player
+        context['session_user'] = session_user
+        context['week'] = week
+        context['season'] = season
+
+        return context
 
 
 class PlayerEntryList(ListView):
@@ -38,19 +86,25 @@ class PlayerEntryList(ListView):
 
         if 'week' in self.kwargs:
             week = self.kwargs['week']
+            print('PlayerEntryList-week in kwargs->', week, self.kwargs)
         else:
             week = NflGame.get_nfl_week()
+            print('PlayerEntryList-week NOT in kwargs->', week, self.kwargs)
         season = NflGame.get_nfl_season()
         if session_user == player:
             context['current_entry'] = Entry.get_player_entries(player=player, week=week)
         else:
             context['current_entry'] = Entry.get_player_entries(player=player, week=week, sort='date')
+
+        player_entry = PlayerEntry.objects.get(season=season, week=week, player=player)
+        print('PlayerEntryList: points earned->', player_entry.get_points_earned())
+
         context['menu'] = get_menu_list()
         context['player'] = player
         context['session_user'] = session_user
         context['week'] = week
         context['season'] = season
-        context['points_total'] = Entry.get_points_total(season=season, week=week, player=player)
+        context['points_total'] = player_entry.get_points_earned()
         return context
 
     def get(self, request, *args, **kwargs):

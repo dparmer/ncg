@@ -71,8 +71,9 @@
 
                     <li id="entry_{{ entry.id }}" class="list-group-item" value="{{ forloop.counter }}">
                       Projected Winner- <strong>{{ entry.projected_winner.name }}</strong> | Game- {{ entry.nfl_game.nfl_game_pretty }}
-                      <span class="badge">{{ entry.confidence }}</span>
 
+                        <span class="badge">{{ entry.confidence }}</span>
+                        <span class="glyphicon glyphicon-sort" aria-hidden="true">></span>
 {#                      Winner-> {{ entry.projected_winner.name }} {{ entry.nfl_game.nfl_game_pretty }}#}
                   </li>
                      {% endif %}

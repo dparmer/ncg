@@ -311,11 +311,46 @@ class PlayerEntry(models.Model):
     season = models.IntegerField(verbose_name='Season')
     week = models.IntegerField(verbose_name='Week')
     is_active = models.BooleanField(verbose_name="Active Flag")
+    points_earned = models.IntegerField(verbose_name='Points Earned', default=0, null=True)
+    points_lost = models.IntegerField(verbose_name='Points Lost', default=0, null=True)
+    nfl_games_won = models.IntegerField(verbose_name='NFL Games Won', default=0, null=True)
+    nfl_games_lost = models.IntegerField(verbose_name='NFL Games Lost', default=0, null=True)
 
     active_confidence_values = []
 
     def get_entries(self):
             return Entry.get_player_entries(player=self.player, week=self.week)
+
+    @property
+    def entries(self):
+        return Entry.objects.filter(player=self.player, season=self.season, week=self.week)
+
+    def get_points_earned(self):
+        return self.points_earned
+
+    def set_points_earned(self, points):
+        self.points_earned += points
+        self.nfl_games_won += 1
+        self.save()
+
+    def set_points_lost(self, points):
+        self.points_lost += points
+        self.nfl_games_lost += 1
+        self.save()
+
+    @classmethod
+    def build_stats(cls):
+        for player_entry in cls.objects.all():
+            player_entry.points_earned = 0
+            player_entry.points_lost = 0
+            player_entry.nfl_games_won = 0
+            player_entry.nfl_games_lost = 0
+            player_entry.save()
+            for entry in player_entry.entries:
+                if entry.is_complete and entry.is_winner:
+                    player_entry.set_points_earned(entry.points_earned)
+                elif entry.is_complete and not entry.is_winner:
+                    player_entry.set_points_lost(entry.confidence)
 
     @classmethod
     def get_entry(cls, player, season, week):
@@ -450,14 +485,17 @@ class Entry(models.Model):
 
     def set_final(self, winning_team):
         if not self.is_complete:
+            player_entry = PlayerEntry.objects.get(player=self.player, week=self.week, season=self.season)
             self.is_complete = True
             self.potential_points = 0
             if winning_team == self.projected_winner:
                 self.is_winner = True
                 self.points_earned = self.confidence
+                player_entry.set_points_earned(self.confidence)
             else:
                 self.is_winner = False
                 self.points_earned = 0
+                player_entry.set_points_lost(self.confidence)
             self.save()
 
 

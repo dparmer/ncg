@@ -1,0 +1,69 @@
+{% extends "confidence/base.html" %}
+{% load staticfiles %}
+{% load tz %}
+{% block content %}
+{% localtime on %}
+
+
+<div class="jumbotron">
+    <div class="container-fluid">
+
+        <div class="row">
+          <div class="col-sm-12">
+            <h3>Results by Week</h3>
+          </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <ul class="nav nav-tabs" role="tablist">
+                    {% for x in results %}
+                        {% if x.tab_class == 'tab-pane active' %}
+                        <li role="presentation" class="active"><a href="#{{ x.value }}" aria-controls="{{ x.value }}" role="tab" data-toggle="tab">{{ x.value }}</a></li>
+                        {% else %}
+                        <li role="presentation"><a href="#{{ x.value }}" aria-controls="{{ x.value }}" role="tab" data-toggle="tab">{{ x.value }}</a></li>
+
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+
+                 <div class="tab-content">
+                    {% for x in results %}
+                        <div role="tabpanel" class="{{ x.tab_class }}" id="{{ x.value }}">
+                           <table class="table">
+                                <thead>
+
+                                    <tr>
+                                        <th>Player</th>
+                                        <th style = "text-align: center;">Points Earned</th>
+                                        <th style = "text-align: center;">Points Lost</th>
+                                        <th style = "text-align: center;">NFL Games Won</th>
+                                        <th style = "text-align: center;">NFL Games Lost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for plyr in x.players %}
+                                    <tr>
+                                        <td><a href="/confidence/entry/{{ plyr.id }}/{{ x.value }}/">{{ plyr.player.first_name }} {{ plyr.player.last_name }}</a></td>
+                                        <td style = "text-align: center;">{{ plyr.points_earned }}</td>
+                                        <td style = "text-align: center;">{{ plyr.points_lost }}</td>
+                                        <td style = "text-align: center;">{{ plyr.nfl_games_won }}</td>
+                                        <td style = "text-align: center;">{{ plyr.nfl_games_lost }}</td>
+
+                                    </tr>
+                                    {% endfor %}
+                                   </tbody>
+                           </table>
+                        </div>
+
+                    {% endfor %}
+                 </div>
+
+          </div>
+        </div>
+    </div>
+
+</div>
+
+
+{% endlocaltime %}
+{% endblock %}}
