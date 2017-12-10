@@ -47,20 +47,15 @@ class ResultsList(ListView):
         for wk in range(13, current_week + 1):
             week['value'] = wk
             if wk == NflGame.get_nfl_week():
-                week['tab_class'] = 'tab-pane active'
+                week['tab_class'] = 'tab-pane fade in active'
             else:
-                week['tab_class'] = 'tab-pane'
+                week['tab_class'] = 'tab-pane fade'
             week['players'] = PlayerEntry.objects.filter(season=NflGame.get_nfl_season(), week=wk).order_by('-points_earned')
 
             results.append(week.copy())
             week.clear()
 
         print('ResultsList: results->', results)
-
-        # results[13] = week{}
-        # week[‘value’] = week#
-        # week[‘tab_class’] = ‘tab-pane active’ | ‘tab-pane’
-        # week[‘players’] = player_entry[]
 
         context['results'] = results
         context['menu'] = get_menu_list()

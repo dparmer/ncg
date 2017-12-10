@@ -15,9 +15,9 @@
         </div>
         <div class="row">
             <div class="col-sm-12">
-                <ul class="nav nav-tabs" role="tablist">
+                <ul class="nav nav-pills" role="tablist">
                     {% for x in results %}
-                        {% if x.tab_class == 'tab-pane active' %}
+                        {% if x.tab_class == 'tab-pane fade in active' %}
                         <li role="presentation" class="active"><a href="#{{ x.value }}" aria-controls="{{ x.value }}" role="tab" data-toggle="tab">{{ x.value }}</a></li>
                         {% else %}
                         <li role="presentation"><a href="#{{ x.value }}" aria-controls="{{ x.value }}" role="tab" data-toggle="tab">{{ x.value }}</a></li>
