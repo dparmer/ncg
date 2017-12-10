@@ -171,6 +171,10 @@ class NflGame(models.Model):
                                 self.away_team.name, self.away_team_line )
 
     @property
+    def entries(self):
+        return Entry.objects.filter(nfl_game=self, week=self.week, season=self.season).order_by('player')
+
+    @property
     def losing_team(self):
         if self.winner == self.home_team:
             return 2
@@ -439,7 +443,7 @@ class Entry(models.Model):
     @classmethod
     def get_entries(cls, week):
         try:
-            return cls.objects.filter(week=week)
+            return cls.objects.filter(week=week).order_by('nfl_game__game_time', 'player')
         except Exception as inst:
             print(inst)
             return None

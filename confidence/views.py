@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.views.generic.list import ListView
 from django.views.generic import CreateView, UpdateView, TemplateView
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView, PasswordChangeDoneView
 from django.http import HttpResponseRedirect, Http404, QueryDict
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -11,6 +11,7 @@ from .forms import EntryAddForm, EntryUpdateForm
 import random
 import plotly.offline as opy
 import plotly.graph_objs as go
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 def get_menu_list():
 
@@ -18,13 +19,14 @@ def get_menu_list():
                   ('NFL Schedule', 'confidence/current_games_list'),
                   ('Current Entry', 'confidence/current_entry'),
                   ('Results', 'confidence/results_list'),
+                  ('Head 2 Head', 'confidence/head2head_list'),
                   ('Logout', 'login'),
                   )
     print("WelcomePageView: get_menu_list: list->", menu_items)
     return menu_items
 
 
-class ResultsList(ListView):
+class ResultsList(LoginRequiredMixin,ListView):
     model = Entry
     template_name = 'confidence/results_list.html'
 
@@ -67,7 +69,44 @@ class ResultsList(ListView):
         return context
 
 
-class PlayerEntryList(ListView):
+class Head2HeadView(ListView):
+    model = Entry
+    template_name = 'confidence/head2head_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(Head2HeadView, self).get_context_data(**kwargs)
+        session_user = Player.get_player(context['view'].request.user.username)
+        if 'player_id' in self.kwargs:
+            player = Player.get_player(id=self.kwargs['player_id'])
+        else:
+            player = Player.get_player(context['view'].request.user.username)
+
+        if 'week' in self.kwargs:
+            week = self.kwargs['week']
+            print('PlayerEntryList-week in kwargs->', week, self.kwargs)
+        else:
+            week = NflGame.get_nfl_week()
+            print('PlayerEntryList-week NOT in kwargs->', week, self.kwargs)
+        season = NflGame.get_nfl_season()
+
+        players = []
+        for entry in PlayerEntry.objects.filter(season=season, week=week).order_by('player'):
+            players.append(entry.player)
+
+        games = NflGame.objects.filter(season=season, week=week)
+        context['menu'] = get_menu_list()
+        context['player'] = player
+        context['session_user'] = session_user
+        context['week'] = week
+        context['season'] = season
+        context['games'] = games
+        context['players'] = players
+
+        return context
+
+
+
+class PlayerEntryList(LoginRequiredMixin, ListView):
     model = Entry
     template_name = 'confidence/playerentry_list.html'
 
@@ -111,7 +150,8 @@ class PlayerEntryList(ListView):
             print('PlayerEntryList:not_authenticated_get->', request.user)
             return HttpResponseRedirect(reverse('login'))
 
-class NflGameList(ListView):
+
+class NflGameList(LoginRequiredMixin, ListView):
 
     model = NflGame
     template_name = 'confidence/nflgame_list.html'
@@ -210,7 +250,8 @@ class NflGameList(ListView):
             print('NflGameList:not_authenticated_get->', request.user)
             return HttpResponseRedirect(reverse('login'))
 
-class TeamGameList(ListView):
+
+class TeamGameList(LoginRequiredMixin, ListView):
 
     model = NflGame
     template_name = 'confidence/teamgame_list.html'
@@ -234,7 +275,7 @@ class TeamGameList(ListView):
             return HttpResponseRedirect(reverse('login'))
 
 
-class UpdateEntry(CreateView):
+class UpdateEntry(LoginRequiredMixin, CreateView):
     model = Entry
     form_class = EntryUpdateForm
     template_name = 'confidence/update_entry.html'
@@ -345,7 +386,7 @@ class UpdateEntry(CreateView):
             return HttpResponseRedirect(reverse('login'))
 
 
-class CreateEntry(CreateView):
+class CreateEntry(LoginRequiredMixin, CreateView):
 
     model = Entry
     form_class = EntryAddForm
@@ -486,7 +527,7 @@ class CreateEntry(CreateView):
             return HttpResponseRedirect(reverse('login'))
 
 
-class SortEntry(UpdateView):
+class SortEntry(LoginRequiredMixin, UpdateView):
     model = PlayerEntry
     fields = ['player', 'season', 'week', 'is_active']
     template_name = 'confidence/sort_entry.html'
