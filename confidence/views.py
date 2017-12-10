@@ -14,11 +14,11 @@ import plotly.graph_objs as go
 
 def get_menu_list():
 
-    menu_items = (('Login', 'login'),
+    menu_items = (
                   ('NFL Schedule', 'confidence/current_games_list'),
-                  ('Logout', 'login'),
                   ('Current Entry', 'confidence/current_entry'),
-                  ('Results', 'confidence/results_list')
+                  ('Results', 'confidence/results_list'),
+                  ('Logout', 'login'),
                   )
     print("WelcomePageView: get_menu_list: list->", menu_items)
     return menu_items
