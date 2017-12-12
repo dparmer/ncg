@@ -614,15 +614,16 @@ class NflGameMgr(models.Manager):
             team1 = NflTeam.get_team(city=game[0])
             team2 = NflTeam.get_team(city=game[2])
             nfl_game = NflGame.get_game(week=NflGame.get_nfl_week(), home_team=team1, away_team=team2)
-            team1_line = float(game[1])
-            team2_line = abs(float(game[1]))
-            if team1 == nfl_game.home_team:
-                nfl_game.home_team_line = team1_line
-                nfl_game.away_team_line = team2_line
-            else:
-                nfl_game.home_team_line = team2_line
-                nfl_game.away_team_line = team1_line
-            nfl_game.save()
+            if nfl_game:
+                team1_line = float(game[1])
+                team2_line = abs(float(game[1]))
+                if team1 == nfl_game.home_team:
+                    nfl_game.home_team_line = team1_line
+                    nfl_game.away_team_line = team2_line
+                else:
+                    nfl_game.home_team_line = team2_line
+                    nfl_game.away_team_line = team1_line
+                nfl_game.save()
             print("set line-", nfl_game)
 
     @classmethod
