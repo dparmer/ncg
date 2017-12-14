@@ -618,6 +618,9 @@ class NflGameMgr(models.Manager):
                 if game[1] != 'Off':
                     team1_line = float(game[1])
                     team2_line = abs(float(game[1]))
+                else:
+                    team1_line = 0
+                    team2_line = 0
                 if team1 == nfl_game.home_team:
                     nfl_game.home_team_line = team1_line
                     nfl_game.away_team_line = team2_line
