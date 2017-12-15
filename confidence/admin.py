@@ -37,6 +37,11 @@ class EntryAdmin(admin.ModelAdmin):
                     'confidence', 'pick_selection', 'projected_winner', 'is_complete', 'points_earned',
                     'potential_points', 'is_locked']
 
+class PlayerEntryAdmin(admin.ModelAdmin):
+    fields = ['player', 'season', 'week', 'is_active', 'points_earned',
+              'points_lost', 'nfl_games_won', 'nfl_games_lost' ]
+    list_display = ['id', 'player', 'season', 'week', 'is_active', 'points_earned',
+              'points_lost', 'nfl_games_won', 'nfl_games_lost' ]
 
 admin.site.register(Player, PlayerAdmin)
 admin.site.register(NflGame, NflGameAdmin)
