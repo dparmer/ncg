@@ -58,3 +58,9 @@ class EntryAddForm(ModelForm):
             else:
                 self.fields.update({'pick_' + str(game.id): ChoiceField(widget = Select(), choices = ([(0,'None'),(1,game.home_team.name), (2,game.away_team.name), ]), initial=0 ) })
 
+
+    def clean(self):
+
+        print('EntryAdd-> clean_data', self.cleaned_data)
+
+        return self.cleaned_data

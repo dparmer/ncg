@@ -8,6 +8,7 @@ import requests
 import pytz
 from django.utils.timezone import get_current_timezone, make_aware
 import re
+import random
 
 
 # Create your models here.
@@ -322,6 +323,16 @@ class PlayerEntry(models.Model):
 
     active_confidence_values = []
 
+    @classmethod
+    def create_entry(cls, player, season, week):
+        if not PlayerEntry.get_entry(player=player, season=season, week=week):
+            pe = PlayerEntry(player=player, season=season, week=week,
+                         is_active=True)
+            pe.save()
+            return pe
+        else:
+            return None
+
     def get_entries(self):
             return Entry.get_player_entries(player=self.player, week=self.week)
 
@@ -389,6 +400,7 @@ class PlayerEntry(models.Model):
         sean.save()
         scott.save()
 
+
 class Entry(models.Model):
 
     winner_choices = ((1, 'Home Team'), (2, 'Away Team'))
@@ -418,6 +430,128 @@ class Entry(models.Model):
             print('current time past game time- setting lock', self)
             self.is_locked = True
             self.save()
+
+    @classmethod
+    def entry_exists(cls, player, season, week, nfl_game):
+        try:
+            Entry.objects.get(player=player, week=week, season=season, nfl_game=nfl_game).exists()
+            return True
+        except Exception as inst:
+            print('entry  not found', inst)
+            return False
+
+    @classmethod
+    def create_entry(cls,player, season, week, nfl_game, confidence, pick_selection, projected_winner, is_locked ):
+        if Entry.entry_exists(player=player, season=season, week=week, nfl_game=nfl_game):
+            return None
+        else:
+            e = Entry(player=player, season=season, week=week, nfl_game=nfl_game, is_winner=None,
+                      confidence=confidence, pick_selection=pick_selection, projected_winner=projected_winner,
+                      is_locked=is_locked)
+            e.save()
+            return e
+
+    @classmethod
+    def create_update_entries(cls, entries, username, mode):
+        print("entries->", entries)
+        player = Player.get_player(username)
+
+        conf_dict = {}
+        pick_dict = {}
+        game_dict = {}
+        week = NflGame.get_nfl_week()
+        season = NflGame.get_nfl_season()
+
+        if mode == 'create':
+            try:
+                Entry.objects.filter(player=player, season=season, week=week).delete()
+            except Exception as inst:
+                print("error deleting entries", inst)
+
+            """ shuffle the order so we don't end up with similar rankings"""
+            game_count = NflGame.get_game_count()
+            remain_game_count = NflGame.get_remain_game_count()
+            played_games = game_count - remain_game_count
+            conf_range = []
+
+            for count in range(played_games + 1,game_count + 1):
+                conf_range.append(count)
+            print('conf_range->', conf_range)
+            shuff_conf_range = random.sample(conf_range, len(conf_range))
+            print('shuffled conf_range->', shuff_conf_range)
+
+            pe = PlayerEntry.create_entry(player=player, season=season, week=week)
+            if not pe:
+                return {'fail': 'Error- Player Entry exists'}
+        else:
+            pe = PlayerEntry.get_entry(player=player, week=week, season=season)
+
+        """ build the pick data structures"""
+        for key, value in entries.items():
+            fld_type, game_id = key.split('_')
+
+            if fld_type == 'pick':
+                pick_dict[game_id] = value
+                game = NflGame.get_game(id=game_id)
+                game_dict[game_id] = game
+
+        conf_complete_game = 0
+        conf_index = 0
+        print("game_dict->", game_dict)
+        for game_id, game in game_dict.items():
+            if mode == 'create':
+                """ if game over or in progress set to lost and assign lowest confidence """
+                if game.is_final or game.in_progress:
+                    print("game is final->", game)
+                    if game.winner == game.home_team:
+                        projected_winner = game.away_team
+                    elif game.winner == game.away_team:
+                        projected_winner = game.home_team
+                    else:
+                        projected_winner = None
+                    conf_complete_game += 1
+                    conf_dict[game_id] = conf_complete_game
+                    e = Entry.create_entry(player=player, season=game.season, week=game.week, nfl_game=game,
+                                           confidence=int(conf_dict[game_id]), pick_selection=int(pick_dict[game_id]),
+                                           projected_winner=projected_winner, is_locked=True)
+                    if not e:
+                        return {1: "failed to create entry"}
+                    print('e->', e.player.first_name, e.id, game.season, game.week, projected_winner.name)
+                else: # we can make the pick, game is future game
+                    print("game is future->", game)
+                    if pick_dict[game_id] == '1':
+                        projected_winner = game.home_team
+                    elif pick_dict[game_id] == '2':
+                        projected_winner = game.away_team
+                    else:
+                        projected_winner = None
+                    conf_dict[game_id] = shuff_conf_range[conf_index]
+                    conf_index += 1
+                    e = Entry.create_entry(player=player, season=game.season, week=game.week, nfl_game=game,
+                                           confidence=int(conf_dict[game_id]), pick_selection=int(pick_dict[game_id]),
+                                           projected_winner=projected_winner, is_locked=False)
+                    print('e->', e.player.first_name, e.id, game.season, game.week, projected_winner.name)
+                    if not e:
+                        return {'fail': "failed to create entry"}
+            else: # update mode
+                try:
+                    entry = Entry.get_entry(player=player, season=season, week=week, nfl_game=game)
+                except Exception as inst:
+                    print('failed to get entry', inst)
+                    return {'fail': 'Failed to get entry on update'}
+
+                if pick_dict[game_id] == '1':
+                    projected_winner = game.home_team
+                elif pick_dict[game_id] == '2':
+                    projected_winner = game.away_team
+                else:
+                    projected_winner = None
+                entry.pick_selection = int(pick_dict[game_id])
+                entry.projected_winner = projected_winner
+                entry.save()
+
+        player.set_entry()
+        return { 'success': pe}
 
     @classmethod
     def set_entry_locks(cls):
