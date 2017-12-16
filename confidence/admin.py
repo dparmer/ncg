@@ -3,8 +3,10 @@ from .models import Player, NflGame, NflTeam, Entry, NflGameMgr, PlayerEntry
 
 
 class PlayerAdmin(admin.ModelAdmin):
-    fields = ['first_name', 'last_name', 'losses', 'wins', 'username']
-    list_display = ['id', 'first_name', 'last_name', 'losses', 'wins', 'username']
+    fields = ['first_name', 'last_name', 'losses', 'wins', 'username', 'has_current_entry',
+              'latest_entry_time', 'active_wk_points']
+    list_display = ['id', 'first_name', 'last_name', 'losses', 'wins', 'username',
+                    'has_current_entry', 'latest_entry_time', 'active_wk_points']
 
 
 class NflGameAdmin(admin.ModelAdmin):
