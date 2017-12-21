@@ -13,6 +13,7 @@ import plotly.offline as opy
 import plotly.graph_objs as go
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from .tasks import task_nfl_score_update
 
 def get_menu_list():
 
@@ -23,6 +24,8 @@ def get_menu_list():
                   ('Head 2 Head', 'confidence/head2head_list'),
                   ('Logout', 'login'),
                   )
+    task_nfl_score_update.delay()
+    #NflGameMgr.game_score_update()
     print("WelcomePageView: get_menu_list: list->", menu_items)
     return menu_items
 
@@ -143,7 +146,7 @@ class PlayerEntryList(LoginRequiredMixin, ListView):
         return context
 
     def get(self, request, *args, **kwargs):
-        NflGameMgr.game_score_update()
+        #NflGameMgr.game_score_update()
         if request.user.is_authenticated:
             print('PlayerEntryList:authenticated_get->', request.user)
             return super(PlayerEntryList, self).get(request, *args, **kwargs)
@@ -244,7 +247,7 @@ class NflGameList(LoginRequiredMixin, ListView):
             print("NflGameList player->", player.first_name, player.last_name)
             player.check_entry()
             Entry.set_entry_locks()
-            NflGameMgr.game_score_update()
+            #NflGameMgr.game_score_update()
             #PlayerEntry.build_entry()
             return super(NflGameList, self).get(request, *args, **kwargs)
         else:
