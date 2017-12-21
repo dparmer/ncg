@@ -1,13 +1,19 @@
+amqp==2.2.2
 beautifulsoup4==4.6.0
+billiard==3.5.0.3
 bs4==0.0.1
+celery==4.1.0
 certifi==2017.11.5
 chardet==3.0.4
 decorator==4.1.2
 dj-database-url==0.4.2
 Django==1.11.7
 django-bootstrap3==9.1.0
+django-celery-beat==1.1.0
+django-celery-results==1.0.1
 django-crispy-forms==1.7.0
 django-extensions==1.9.7
+ephem==3.7.6.0
 gunicorn==19.7.1
 html5lib==0.999999999
 httplib2==0.10.3
@@ -15,6 +21,7 @@ idna==2.6
 ipython-genutils==0.2.0
 jsonschema==2.6.0
 jupyter-core==4.4.0
+kombu==4.1.0
 lxml==4.1.1
 nbformat==4.4.0
 plotly==2.2.2
@@ -25,5 +32,6 @@ six==1.11.0
 traitlets==4.3.2
 typing==3.6.2
 urllib3==1.22
+vine==1.1.4
 webencodings==0.5.1
 whitenoise==3.3.1
