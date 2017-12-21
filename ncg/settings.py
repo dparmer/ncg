@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'django_extensions',
     'bootstrap3',
     'crispy_forms',
+    'django_celery_results',
+    'django_celery_beat',
     'confidence'
 ]
 
@@ -99,6 +101,17 @@ db_from_env = dj_database_url.config()
 DATABASES['default'].update(db_from_env)
 db_from_env = dj_database_url.config(conn_max_age=500)
 DATABASES['default'].update(db_from_env)
+
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_IMPORTS = ['confidence.tasks']
+
+#CELERY_BROKER_URL = os.environ.get("CLOUDAMQP_URL", "amqp://guest:guest@localhost:5672//")
+CELERY_BROKER_URL = os.environ.get("CLOUDAMQP_URL", "amqp://ncg:dsp1315@sirius:5672/sirius")
+CELERY_BROKER_POOL_LIMIT = 1
+CELERY_BROKER_CONNECTION_MAX_RETRIES = None
+
+CELERY_TASK_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json", "msgpack"]
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
