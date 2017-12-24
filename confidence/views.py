@@ -99,7 +99,7 @@ class Head2HeadView(ListView):
         for entry in PlayerEntry.objects.filter(season=season, week=week).order_by('player'):
             players.append(entry.player)
 
-        games = NflGame.objects.filter(season=season, week=week)
+        games = NflGame.objects.filter(season=season, week=week).order_by('game_time')
         context['menu'] = get_menu_list()
         context['player'] = player
         context['session_user'] = session_user
