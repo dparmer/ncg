@@ -240,14 +240,12 @@ class NflGame(models.Model):
             return None
 
 
-    def set_result(self, win_score, lose_score, winning_team=None, is_final=False, in_progress=False):
+    def set_result(self, win_score, lose_score, winning_team=None, is_final=False, in_progress=False, status=None):
         self.winner = winning_team
         self.is_final = is_final
         self.in_progress = in_progress
-        if is_final:
-            self.game_status = 'Final'
-        elif in_progress:
-            self.game_status = 'In Progress'
+        self.game_status = status
+
         if winning_team:
             if winning_team == self.home_team:
                 self.home_team_score = win_score
@@ -800,6 +798,7 @@ class NflGameMgr(models.Manager):
                         value = value[:len(value)-2]
                     game_results[key] = value.strip('\"')
             game_list.append(game_results.copy())
+            game_results.clear()
 
         print(game_list)
 
@@ -807,16 +806,20 @@ class NflGameMgr(models.Manager):
             home_team = NflTeam.get_team(short_name=game['h'])
             away_team = NflTeam.get_team(short_name=game['v'])
             nfl_game = NflGame.get_game(week=week, home_team=home_team, away_team=away_team)
+
             win_team = None
             if game['q'] == 'P':
                 in_progress = False
                 is_final = False
+                status = 'Scheduled'
             elif game['q'] == 'F' :
                 in_progress = False
                 is_final = True
+                status = 'Final'
             else:
                 in_progress = True
                 is_final = False
+                status = 'QTR ' + str(game['q']) + " - " + str(game['k'])
 
             if game['hs'] > game['vs']:
                 win_team = home_team
@@ -828,7 +831,7 @@ class NflGameMgr(models.Manager):
                 lose_score = game['hs']
             if nfl_game:
                 nfl_game.set_result(winning_team=win_team, win_score=win_score, lose_score=lose_score, is_final=is_final,
-                                in_progress=in_progress)
+                                in_progress=in_progress, status=status)
                 print('game updated->', nfl_game)
             else:
                 print('game not found')
