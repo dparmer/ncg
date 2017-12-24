@@ -15,6 +15,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from .tasks import task_nfl_score_update
 
+
 def get_menu_list():
 
     menu_items = (
@@ -25,6 +26,7 @@ def get_menu_list():
                   ('Logout', 'login'),
                   )
     task_nfl_score_update.delay()
+
     #NflGameMgr.game_score_update()
     print("WelcomePageView: get_menu_list: list->", menu_items)
     return menu_items

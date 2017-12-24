@@ -819,7 +819,10 @@ class NflGameMgr(models.Manager):
             else:
                 in_progress = True
                 is_final = False
-                status = 'QTR ' + str(game['q']) + " - " + str(game['k'])
+                if game['k']:
+                    status = 'QTR ' + str(game['q']) + " - " + str(game['k'])
+                else:
+                    status = 'QTR ' + str(game['q'])
 
             if game['hs'] > game['vs']:
                 win_team = home_team
