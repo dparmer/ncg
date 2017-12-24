@@ -256,6 +256,9 @@ class NflGame(models.Model):
             print('NflGame.set_result->', self.winner.name, self.home_team.name, self.away_team.name,
                   self.home_team_score, self.away_team_score)
             self.save()
+            print('NflGame.set_result->', self.winner.name, self.home_team.name, self.away_team.name,
+                  self.home_team_score, self.away_team_score)
+
         else:
             self.save()
 
@@ -823,16 +826,19 @@ class NflGameMgr(models.Manager):
                     status = 'QTR ' + str(game['q']) + " - " + str(game['k'])
                 else:
                     status = 'QTR ' + str(game['q'])
-
-            if game['hs'] > game['vs']:
+            print('game->', game)
+            if int(game['hs']) > int(game['vs']):
+                print('home won', game['hs'], '>', game['vs'])
                 win_team = home_team
                 win_score = game['hs']
                 lose_score = game['vs']
-            elif game['hs'] == game['vs']:
+            elif int(game['hs']) == int(game['vs']):
+                print('tie', game['hs'], '=', game['vs'])
                 win_team = None
                 win_score = game['hs']
                 lose_score = game['vs']
             else:
+                print('away won', game['hs'], '<', game['vs'])
                 win_team = away_team
                 win_score = game['vs']
                 lose_score = game['hs']
