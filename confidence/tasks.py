@@ -6,7 +6,7 @@ from .models import NflGameMgr
 
 @shared_task
 def task_nfl_score_update():
-    NflGameMgr.game_score_update()
+    NflGameMgr.game_score_update2()
 
 @shared_task
 def add(x, y):

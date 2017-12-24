@@ -107,9 +107,13 @@ class NflTeam(models.Model):
     def get_team(cls, short_name=None, city=None, name=None):
         if short_name:
             try:
+                if short_name == 'JAX':
+                    short_name = 'JAC'
+                if short_name == 'LA':
+                    short_name = 'LAR'
                 return cls.objects.get(short_name=short_name)
             except Exception as inst:
-                print(inst)
+                print('short_name->', short_name, inst)
                 return None
         elif city and name:
             try:
@@ -202,6 +206,11 @@ class NflGame(models.Model):
                 return str(self.winner.name + " " + str(self.home_team_score) + "-" + str(self.away_team_score))
             else:
                 return str(self.winner.name + " " + str(self.away_team_score) + "-" + str(self.home_team_score))
+        elif self.in_progress:
+            if self.home_team_score > self.away_team_score:
+                return str(self.home_team.name + " " + str(self.home_team_score) + "-" + str(self.away_team_score))
+            else:
+                return str(self.away_team.name + " " + str(self.away_team_score) + "-" + str(self.home_team_score))
         else:
             return "tbd"
 
@@ -233,19 +242,24 @@ class NflGame(models.Model):
 
     def set_result(self, win_score, lose_score, winning_team=None, is_final=False, in_progress=False):
         self.winner = winning_team
-        if winning_team == self.home_team:
-            self.home_team_score = win_score
-            self.away_team_score = lose_score
-        else:
-            self.home_team_score = lose_score
-            self.away_team_score = win_score
         self.is_final = is_final
         self.in_progress = in_progress
         if is_final:
             self.game_status = 'Final'
         elif in_progress:
             self.game_status = 'In Progress'
-        self.save()
+        if winning_team:
+            if winning_team == self.home_team:
+                self.home_team_score = win_score
+                self.away_team_score = lose_score
+            else:
+                self.home_team_score = lose_score
+                self.away_team_score = win_score
+            print('NflGame.set_result->', self.winner.name, self.home_team.name, self.away_team.name,
+                  self.home_team_score, self.away_team_score)
+            self.save()
+        else:
+            self.save()
 
     @classmethod
     def get_nfl_week(cls, today=None):
@@ -763,6 +777,68 @@ class NflGameMgr(models.Manager):
                     nfl_game.away_team_line = team1_line
                 nfl_game.save()
             print("set line-", nfl_game)
+
+
+    @classmethod
+    def game_score_update2(cls, week=None):
+        nfl_scores_xml = 'http://www.nfl.com/liveupdate/scorestrip/ss.xml'
+        week = NflGame.get_nfl_week()
+        season = NflGame.get_nfl_season()
+        is_final = False
+        response = requests.get(nfl_scores_xml)
+        xml = BeautifulSoup(response.content, 'xml')
+        games_list = []
+        games = xml.find_all("g")
+        game_results = {}
+        game_list = []
+        for game in games:
+            fields = str(game).split()
+            for field in fields:
+                if field.find("=") > 0:
+                    key, value = field.split("=")
+                    if value[-2:] == "/>":
+                        value = value[:len(value)-2]
+                    game_results[key] = value.strip('\"')
+            game_list.append(game_results.copy())
+
+        print(game_list)
+
+        for game in game_list:
+            home_team = NflTeam.get_team(short_name=game['h'])
+            away_team = NflTeam.get_team(short_name=game['v'])
+            nfl_game = NflGame.get_game(week=week, home_team=home_team, away_team=away_team)
+            win_team = None
+            if game['q'] == 'P':
+                in_progress = False
+                is_final = False
+            elif game['q'] == 'F' :
+                in_progress = False
+                is_final = True
+            else:
+                in_progress = True
+                is_final = False
+
+            if game['hs'] > game['vs']:
+                win_team = home_team
+                win_score = game['hs']
+                lose_score = game['vs']
+            else:
+                win_team = away_team
+                win_score = game['vs']
+                lose_score = game['hs']
+            if nfl_game:
+                nfl_game.set_result(winning_team=win_team, win_score=win_score, lose_score=lose_score, is_final=is_final,
+                                in_progress=in_progress)
+                print('game updated->', nfl_game)
+            else:
+                print('game not found')
+            if is_final:
+                entries = Entry.get_entries_for_game(nfl_game)
+                if entries:
+                    for entry in entries:
+                        entry.set_final(winning_team=win_team)
+        NflGameMgr.game_line_update()
+
 
     @classmethod
     def game_score_update(cls, week=None):

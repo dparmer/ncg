@@ -6,33 +6,42 @@ import re
 week = 12
 season = 2017
 
-footballlocks_com_url = 'http://www.footballlocks.com/nfl_lines.shtml'
+nfl_scores_xml = 'http://www.nfl.com/liveupdate/scorestrip/ss.xml'
 
-response = requests.get(footballlocks_com_url)
-html = BeautifulSoup(response.content, 'html.parser')
+response = requests.get(nfl_scores_xml)
+xml = BeautifulSoup(response.content, 'xml')
 games_list = []
-columns = html.find_all("td")
-game_data = []
-begin = 0
-count = 0
-for col in columns:
-    date_col = re.match( r'(\d+)/(\d+) \d+:\d+ ET', col.text)
-    if date_col:
-        begin += 1
-        count = 0
-        continue
-    if begin > 0:
-        count += 1
-        hometeam = re.match(r'At (\D+)', col.text)
-        if hometeam:
-            game_data.append(hometeam.group(1))
-        else:
-            game_data.append(col.text)
-        if count > 3:
-            games_list.append(game_data.copy())
-            game_data.clear()
-            begin = 0
-print(games_list)
+games = xml.find_all("g")
+game_results = {}
+game_list = []
+for game in games:
+    fields = str(game).split()
+    for field in fields:
+        if field.find("=") > 0:
+            key, value = field.split("=")
+            if value[-2:] == "/>":
+                value = value[:len(value)-2]
+            game_results[key] = value.strip('\"')
+    games_list.append(game_results.copy())
+    print(game_results)
+    game_results.clear()
+
+#print(games_list)
 
 
+    #
+    # mo = re.match(r'<g d=\"(\w+)\" eid=\"(\w+)\" ga=\"\" gsis=\"(\w+)\" gt=\"(\w+)\" h=\"(\w+)\" hnn=\"(\w+)\" hs=\"(\w+)\" q=\"(\w+)\" rz=\"(\w+)\" t=\"(\S+)\" v=\"(\w+)\" vnn=\"(\w+)\" vs=\"(\w+)\"/>', str(game), re.M|re.I)
+    # game_results['game_d'] = mo.group(1)
+    # game_results['game_eid'] = mo.group(2)
+    # game_results['game_gsis'] = mo.group(3)
+    # game_results['game_gt'] = mo.group(4)
+    # game_results['game_h'] = mo.group(5)
+    # game_results['game_hnn'] = mo.group(6)
+    # game_results['game_hs'] = mo.group(7)
+    # game_results['game_q'] = mo.group(8)
+    # game_results['game_rz'] = mo.group(9)
+    # game_results['game_t'] = mo.group(10)
+    # game_results['game_v'] = mo.group(11)
+    # game_results['game_vnn'] = mo.group(12)
+    # game_results['game_vs'] = mo.group(13)
 
