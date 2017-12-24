@@ -37,7 +37,7 @@
                                     <td style = "text-align: center;">hidden</td>
                                     {% else %}
                                     <td style = "text-align: center;">{{ entry.projected_winner.short_name }}
-                                        {% if game.game_status != 'Final' or game.game_status != 'Scheduled' %}
+                                        {% if game.game_status != 'Final' and game.game_status != 'Scheduled' %}
                                         <span class="label label-primary">{{ entry.confidence }}</span>
                                         {% elif game.winner.name == entry.projected_winner.name %}
                                         <span class="label label-success">{{ entry.confidence }}</span>
