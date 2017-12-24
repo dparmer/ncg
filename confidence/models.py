@@ -828,6 +828,10 @@ class NflGameMgr(models.Manager):
                 win_team = home_team
                 win_score = game['hs']
                 lose_score = game['vs']
+            elif game['hs'] == game['vs']:
+                win_team = None
+                win_score = game['hs']
+                lose_score = game['vs']
             else:
                 win_team = away_team
                 win_score = game['vs']
