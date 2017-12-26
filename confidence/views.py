@@ -44,8 +44,6 @@ class ResultsList(LoginRequiredMixin,ListView):
         else:
             player = Player.get_player(context['view'].request.user.username)
 
-
-
         current_week = NflGame.get_nfl_week()
         season = NflGame.get_nfl_season()
         results = []

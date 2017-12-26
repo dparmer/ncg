@@ -43,7 +43,7 @@
                                 <tbody>
                                     {% for plyr in x.players %}
                                     <tr>
-                                        <td><a href="/confidence/entry/{{ plyr.id }}/{{ x.value }}/">{{ plyr.player.first_name }} {{ plyr.player.last_name }}</a></td>
+                                        <td><a href="/confidence/entry/{{ plyr.player.id }}/{{ x.value }}/">{{ plyr.player.first_name }} {{ plyr.player.last_name }}</a></td>
                                         <td style = "text-align: center;">{{ plyr.points_earned }}</td>
                                         <td style = "text-align: center;">{{ plyr.points_lost }}</td>
                                         <td style = "text-align: center;">{{ plyr.nfl_games_won }}</td>
