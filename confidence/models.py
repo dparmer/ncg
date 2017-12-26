@@ -890,8 +890,12 @@ class NflGameMgr(models.Manager):
                 print('game is final', final_c.contents)
                 if final_c.contents[0].strip()[:5] == 'FINAL':
                     is_final = True
+                    in_progress = False
+                    status = 'Final'
                 else:
                     is_final = False
+                    in_progress = False
+                    status = 'Scheduled'
 
                 div_away_team = box_score.find("div", attrs={'class':"away-team"})
                 div_home_team = box_score.find("div", attrs={'class':"home-team"})
@@ -918,16 +922,21 @@ class NflGameMgr(models.Manager):
                 if home_team_score > away_team_score:
                     if is_final:
                         win_team = home_team
+                        status = 'Final'
+                        in_progress = False
                     win_score = home_team_score
                     lose_score = away_team_score
                 else:
                     if is_final:
                         win_team = away_team
+                        status = 'Final'
+                        in_progress = False
                     win_score = away_team_score
                     lose_score = home_team_score
 
                 if game:
-                    game.set_result(winning_team=win_team, win_score=win_score, lose_score=lose_score, is_final=is_final)
+                    game.set_result(winning_team=win_team, win_score=win_score, lose_score=lose_score, is_final=is_final,
+                                    in_progress=in_progress, status=status)
                     print('game updated->', game)
                 else:
                     print('game not found', game)

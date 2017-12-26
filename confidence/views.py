@@ -52,6 +52,7 @@ class ResultsList(LoginRequiredMixin,ListView):
 
         for wk in range(13, current_week + 1):
             week['value'] = wk
+            NflGameMgr.game_score_update(week=wk)
             if wk == NflGame.get_nfl_week():
                 week['tab_class'] = 'tab-pane fade in active'
             else:
