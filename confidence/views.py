@@ -119,6 +119,7 @@ class PlayerEntryList(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super(PlayerEntryList, self).get_context_data(**kwargs)
         session_user = Player.get_player(context['view'].request.user.username)
+        print('PlayerEntryList->kwargs', self.kwargs)
         if 'player_id' in self.kwargs:
             player = Player.get_player(id=self.kwargs['player_id'])
         else:
