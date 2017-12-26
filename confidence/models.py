@@ -258,7 +258,9 @@ class NflGame(models.Model):
             self.save()
             print('NflGame.set_result->', self.winner.name, self.home_team.name, self.away_team.name,
                   self.home_team_score, self.away_team_score)
-
+            if is_final:
+                for entry in Entry.get_entries(week=self.week, nfl_game=self):
+                    entry.set_final(winning_team=winning_team)
         else:
             self.save()
 
@@ -590,9 +592,12 @@ class Entry(models.Model):
         return results
 
     @classmethod
-    def get_entries(cls, week):
+    def get_entries(cls, week, nfl_game=None):
         try:
-            return cls.objects.filter(week=week).order_by('nfl_game__game_time', 'player')
+            if nfl_game:
+                return cls.objects.filter(week=week, nfl_game=nfl_game).order_by('player')
+            else:
+                return cls.objects.filter(week=week).order_by('nfl_game__game_time', 'player')
         except Exception as inst:
             print(inst)
             return None
