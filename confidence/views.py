@@ -28,8 +28,9 @@ def get_menu_list():
     #task_nfl_score_update.delay()
     print('get_menu_list- task id', TaskManager.get_task_id('repeat_nfl_score_update'))
     task = TaskManager.get_task('repeat_nfl_score_update')
-    print('get_menu_list- task status pre-run', task.status())
-    print('get_menu_list- task id pre-run', task.get_task_id('repeat_nfl_score_update'))
+    if task:
+        print('get_menu_list- task status pre-run', task.status())
+        print('get_menu_list- task id pre-run', task.get_task_id('repeat_nfl_score_update'))
     if task.is_complete():
         print('get_menu_list- task is_complete')
         result = repeat_nfl_score_update.delay()
