@@ -39,7 +39,8 @@ def get_menu_list():
             print('get_menu_list- task status', task.status())
             print('get_menu_list- task id', task.get_task_id('repeat_nfl_score_update'))
     else:
-        TaskManager.set_id('initial_id', 'repeat_nfl_score_update')
+        result = repeat_nfl_score_update.delay()
+        TaskManager.set_id(result.id, 'repeat_nfl_score_update')
     #NflGameMgr.game_score_update()
     print("WelcomePageView: get_menu_list: list->", menu_items)
     return menu_items
