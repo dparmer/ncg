@@ -38,9 +38,6 @@ def get_menu_list():
             task = TaskManager.get_task('repeat_nfl_score_update')
             print('get_menu_list- task status', task.status())
             print('get_menu_list- task id', task.get_task_id('repeat_nfl_score_update'))
-        else:
-            result = repeat_nfl_score_update.delay()
-            TaskManager.set_id(result.id, 'repeat_nfl_score_update')
     else:
         result = repeat_nfl_score_update.delay()
         TaskManager.set_id(result.id, 'repeat_nfl_score_update')
