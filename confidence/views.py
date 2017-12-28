@@ -6,14 +6,14 @@ from django.http import HttpResponseRedirect, Http404, QueryDict
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.urls import reverse
-from .models import NflGame, NflTeam, Entry, Player, NflGameMgr, PlayerEntry
+from .models import NflGame, NflTeam, Entry, Player, NflGameMgr, PlayerEntry, TaskManager
 from .forms import EntryAddForm, EntryUpdateForm
 import random
 import plotly.offline as opy
 import plotly.graph_objs as go
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from .tasks import task_nfl_score_update
+from .tasks import task_nfl_score_update, task_nfl_score_update2, repeat_nfl_score_update
 
 
 def get_menu_list():
@@ -25,8 +25,18 @@ def get_menu_list():
                   ('Head 2 Head', 'confidence/head2head_list'),
                   ('Logout', 'login'),
                   )
-    task_nfl_score_update.delay()
-
+    #task_nfl_score_update.delay()
+    print('get_menu_list- task id', TaskManager.get_task_id('repeat_nfl_score_update'))
+    task = TaskManager.get_task('repeat_nfl_score_update')
+    print('get_menu_list- task status pre-run', task.status())
+    print('get_menu_list- task id pre-run', task.get_task_id('repeat_nfl_score_update'))
+    if task.is_complete():
+        print('get_menu_list- task is_complete')
+        result = repeat_nfl_score_update.delay()
+        TaskManager.set_id(result.id, 'repeat_nfl_score_update')
+        task = TaskManager.get_task('repeat_nfl_score_update')
+        print('get_menu_list- task status', task.status())
+        print('get_menu_list- task id', task.get_task_id('repeat_nfl_score_update'))
     #NflGameMgr.game_score_update()
     print("WelcomePageView: get_menu_list: list->", menu_items)
     return menu_items
@@ -52,7 +62,8 @@ class ResultsList(LoginRequiredMixin,ListView):
 
         for wk in range(13, current_week + 1):
             week['value'] = wk
-            NflGameMgr.game_score_update(week=wk)
+            #NflGameMgr.game_score_update(week=wk)
+            task_nfl_score_update2.delay()
             if wk == NflGame.get_nfl_week():
                 week['tab_class'] = 'tab-pane fade in active'
             else:

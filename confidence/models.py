@@ -9,6 +9,8 @@ import pytz
 from django.utils.timezone import get_current_timezone, make_aware
 import re
 import random
+import celery
+import celery.result as result
 
 
 # Create your models here.
@@ -33,7 +35,6 @@ class Player(models.Model):
 
     def get_update_url(self):
         return str("/confidence/update_entry/" + str(self.id) + "/" + str(NflGame.get_nfl_week()) + "/")
-
 
     def set_entry(self):
         self.has_current_entry = True
@@ -200,6 +201,21 @@ class NflGame(models.Model):
         else:
             return self.away_team.name
 
+    @classmethod
+    def is_active_games(cls):
+        week = NflGame.get_nfl_week()
+        season = NflGame.get_nfl_season()
+        is_active = False
+        for game in NflGame.objects.filter(season=season, week=week):
+            if game.game_status == 'Scheduled' or game.game_status == 'Final':
+                print('NflGame: is_active_games = False', game)
+                is_active = False
+            else:
+                print('NflGame: is_active_games = True', game)
+                is_active = True
+                continue
+        return is_active
+
     def get_winner_pretty(self):
         if self.is_final:
             if self.home_team_score > self.away_team_score:
@@ -259,7 +275,7 @@ class NflGame(models.Model):
             print('NflGame.set_result->', self.winner.name, self.home_team.name, self.away_team.name,
                   self.home_team_score, self.away_team_score)
             if is_final:
-                for entry in Entry.get_entries(week=self.week, nfl_game=self):
+                for entry in self.entries:
                     entry.set_final(winning_team=winning_team)
         else:
             self.save()
@@ -694,6 +710,8 @@ class PlayerMgr(models.Manager):
 
 class NflGameMgr(models.Manager):
 
+    result = 0
+
     @classmethod
     def game_history_update(cls):
 
@@ -1032,5 +1050,59 @@ class NflGameMgr(models.Manager):
 
         """ update the game scores """
         cls.game_history_update()
+
+
+class TaskManager(models.Model):
+
+    id = models.AutoField(primary_key=True)
+    task_id = models.CharField(max_length=255, verbose_name='task id for task')
+    task_name = models.CharField(max_length=30, verbose_name='task name')
+
+    @classmethod
+    def set_id(self, task_id, task_name):
+        try:
+            print('TaskManager:set_id updating', task_id, task_name)
+            t = TaskManager.objects.get(task_name=task_name)
+            t.task_id = task_id
+            t.save()
+            return t
+        except Exception as inst:
+            try:
+                print('TaskManager:set_id creating', task_id, task_name)
+                t = TaskManager(task_id=task_id, task_name=task_name)
+                t.save()
+                return t
+            except Exception as inst:
+                print('TaskManager:set_id failed', inst)
+                return None
+
+    @classmethod
+    def get_task_id(cls, task_name):
+        try:
+            return TaskManager.objects.get(task_name=task_name).task_id
+        except Exception as inst:
+            print('TaskManager:get_task_id failed', inst)
+            return None
+
+    @classmethod
+    def get_task(cls, task_name):
+        try:
+            return TaskManager.objects.get(task_name=task_name)
+        except Exception as inst:
+            print('TaskManager:get_task_id failed', inst)
+            return None
+
+    def status(self):
+        task_status = result.AsyncResult(self.task_id)
+        print('TaskManager:is_running task_status', task_status.status)
+        return task_status.status
+
+    def is_complete(self):
+        task_result = result.AsyncResult(id=self.task_id)
+        print('TaskManager:is_complete', task_result.ready())
+        return task_result.ready()
+
+
+
 
 

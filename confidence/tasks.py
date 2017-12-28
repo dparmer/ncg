@@ -10,23 +10,20 @@ def task_nfl_score_update():
     NflGameMgr.game_score_update2()
 
 @shared_task
-def repeat_nfl_score_update():
+def task_nfl_score_update2():
+    NflGameMgr.game_score_update()
 
+@shared_task
+def repeat_nfl_score_update():
     repeat = True
     while repeat:
-        week = NflGame.get_nfl_week()
-        season = NflGame.get_nfl_season()
         NflGameMgr.game_score_update2()
         time.sleep(60)
-        for game in NflGame.objects.filter(season=season, week=week):
-            if game.game_status == 'Scheduled' or game.game_status == 'Final':
-                repeat = False
-            else:
-                repeat = True
-                continue
+        repeat = NflGame.is_active_games()
 
 @shared_task
 def add(x, y):
+    time.sleep(60)
     return x + y
 
 
