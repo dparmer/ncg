@@ -16,7 +16,10 @@ from django.contrib import messages
 from .tasks import task_nfl_score_update, task_nfl_score_update2, repeat_nfl_score_update
 
 
-def get_menu_list():
+def get_menu_list(player=None):
+
+    if player:
+        player.set_last_access_time()
 
     menu_items = (
                   ('NFL Schedule', 'confidence/current_games_list'),
@@ -80,7 +83,7 @@ class ResultsList(LoginRequiredMixin,ListView):
         print('ResultsList: results->', results)
 
         context['results'] = results
-        context['menu'] = get_menu_list()
+        context['menu'] = get_menu_list(player=session_user)
         context['player'] = player
         context['session_user'] = session_user
         context['week'] = week
@@ -114,7 +117,7 @@ class Head2HeadView(ListView):
             players.append(entry.player)
 
         games = NflGame.objects.filter(season=season, week=week).order_by('game_time', 'id')
-        context['menu'] = get_menu_list()
+        context['menu'] = get_menu_list(player=session_user)
         context['player'] = player
         context['session_user'] = session_user
         context['week'] = week
@@ -154,7 +157,7 @@ class PlayerEntryList(LoginRequiredMixin, ListView):
         player_entry = PlayerEntry.objects.get(season=season, week=week, player=player)
         print('PlayerEntryList: points earned->', player_entry.get_points_earned())
 
-        context['menu'] = get_menu_list()
+        context['menu'] = get_menu_list(player=session_user)
         context['player'] = player
         context['session_user'] = session_user
         context['week'] = week
@@ -178,14 +181,15 @@ class NflGameList(LoginRequiredMixin, ListView):
     template_name = 'confidence/nflgame_list.html'
 
     def get_context_data(self, **kwargs):
-
         context = super(NflGameList, self).get_context_data(**kwargs)
-        context['session_user'] = Player.get_player(context['view'].request.user.username)
+        session_user = Player.get_player(context['view'].request.user.username)
+        context = super(NflGameList, self).get_context_data(**kwargs)
+        context['session_user'] = session_user
         context['player'] = Player.get_player(context['view'].request.user.username)
         context['current_games'] = NflGame.current_games
         context['week'] = NflGame.get_nfl_week()
         context['season'] = NflGame.get_nfl_season()
-        context['menu'] = get_menu_list()
+        context['menu'] = get_menu_list(player=session_user)
         players = Player.get_current_players()
         context['players'] = players
 
@@ -280,11 +284,12 @@ class TeamGameList(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
 
         context = super(TeamGameList, self).get_context_data(**kwargs)
-        context['session_user'] = Player.get_player(context['view'].request.user.username)
+        session_user = Player.get_player(context['view'].request.user.username)
+        context['session_user'] = session_user
         team = NflTeam.objects.get(id=self.kwargs['team_id'])
         context['team'] = team
         context['team_games'] = team.get_completed_games()
-        context['menu'] = get_menu_list()
+        context['menu'] = get_menu_list(player=session_user)
         return context
 
     def get(self, request, *args, **kwargs):
@@ -315,7 +320,8 @@ class UpdateEntry(LoginRequiredMixin, CreateView):
         conf_fld_dict = {}
         player = Player.get_player(context['view'].request.user.username)
         context['player'] = player
-        context['session_user'] = Player.get_player(context['view'].request.user.username)
+        session_user = Player.get_player(context['view'].request.user.username)
+        context['session_user'] = session_user
         for fld in context['form'].visible_fields():
             if fld.name[:4] == 'pick':
                 pick_fld_dict[fld.name] = fld
@@ -331,7 +337,7 @@ class UpdateEntry(LoginRequiredMixin, CreateView):
             game_list.append(game_dict.copy())
             #print('field->', game_dict['pick'], game_dict['conf'])
             game_dict.clear()
-        context['menu'] = get_menu_list()
+        context['menu'] = get_menu_list(player=session_user)
         context['current_games'] = game_list
 
         return context
@@ -390,7 +396,8 @@ class CreateEntry(LoginRequiredMixin, CreateView):
         conf_fld_dict = {}
         player = Player.get_player(context['view'].request.user.username)
         context['player'] = player
-        context['session_user'] = Player.get_player(context['view'].request.user.username)
+        session_user = Player.get_player(context['view'].request.user.username)
+        context['session_user'] = session_user
         for fld in context['form'].visible_fields():
             if fld.name[:4] == 'pick':
                 pick_fld_dict[fld.name] = fld
@@ -406,7 +413,7 @@ class CreateEntry(LoginRequiredMixin, CreateView):
             game_list.append(game_dict.copy())
             #print('field->', game_dict['pick'], game_dict['conf'])
             game_dict.clear()
-        context['menu'] = get_menu_list()
+        context['menu'] = get_menu_list(player=session_user)
         context['current_games'] = game_list
 
         return context

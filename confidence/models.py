@@ -26,6 +26,7 @@ class Player(models.Model):
     has_current_entry = models.BooleanField(verbose_name='Has Current Entry?', default=False)
     latest_entry_time = models.DateTimeField(verbose_name="Last Entry", null=True, blank=True)
     active_wk_points = models.IntegerField(verbose_name="Current Week Points", default=0)
+    last_access = models.DateTimeField(verbose_name='last site access time', null=True, blank=True)
 
     def __str__(self):
         return '%s %s %s %s' % (self.id, self.last_name, self.first_name, self.username)
@@ -35,6 +36,12 @@ class Player(models.Model):
 
     def get_update_url(self):
         return str("/confidence/update_entry/" + str(self.id) + "/" + str(NflGame.get_nfl_week()) + "/")
+
+    def set_last_access_time(self):
+        now = datetime.datetime.now()
+        now = make_aware(now, get_current_timezone(), is_dst=True)
+        self.last_access = now
+        self.save()
 
     def set_entry(self):
         self.has_current_entry = True

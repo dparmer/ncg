@@ -4,9 +4,9 @@ from .models import Player, NflGame, NflTeam, Entry, NflGameMgr, PlayerEntry
 
 class PlayerAdmin(admin.ModelAdmin):
     fields = ['first_name', 'last_name', 'losses', 'wins', 'username', 'has_current_entry',
-              'latest_entry_time', 'active_wk_points']
+              'latest_entry_time', 'active_wk_points', 'last_access']
     list_display = ['id', 'first_name', 'last_name', 'losses', 'wins', 'username',
-                    'has_current_entry', 'latest_entry_time', 'active_wk_points']
+                    'has_current_entry', 'latest_entry_time', 'active_wk_points', 'last_access']
 
 
 class NflGameAdmin(admin.ModelAdmin):
