@@ -213,7 +213,7 @@ class NflGame(models.Model):
             else:
                 print('NflGame: is_active_games = True', game)
                 is_active = True
-                continue
+                return is_active
         return is_active
 
     def get_winner_pretty(self):
