@@ -845,7 +845,7 @@ class NflGameMgr(models.Manager):
             else:
                 in_progress = True
                 is_final = False
-                if game['k']:
+                if 'k' in game:
                     status = 'QTR ' + str(game['q']) + " - " + str(game['k'])
                 else:
                     status = 'QTR ' + str(game['q'])
