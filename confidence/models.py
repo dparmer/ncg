@@ -289,11 +289,11 @@ class NflGame(models.Model):
 
     @classmethod
     def get_nfl_week(cls, today=None):
-        tuesdays = [(2017, 9,  5), (2017,  9, 12), (2017,  9, 19), (2017,  9, 26),
-                    (2017, 10, 3), (2017, 10, 10), (2017, 10, 17), (2017, 10, 24), (2017, 10, 31),
-                    (2017, 11, 7), (2017, 11, 14), (2017, 11, 21), (2017, 11, 28),
-                    (2017, 12, 5), (2017, 12, 12), (2017, 12, 19), (2017, 12, 26),
-                    (2018, 1,  2), (2018,  1,  9), (2018,  1, 16), (2018,  1, 23)]
+        tuesdays = [(2018, 9,  4), (2018,  9, 11), (2018,  9, 18), (2018,  9, 25),
+                    (2018, 10, 2), (2018, 10, 9), (2018, 10, 16), (2018, 10, 23), (2018, 10, 30),
+                    (2018, 11, 6), (2018, 11, 13), (2018, 11, 20), (2018, 11, 27),
+                    (2018, 12, 4), (2018, 12, 11), (2018, 12, 18), (2018, 12, 25),
+                    (2018, 1,  1), (2018,  1,  8), (2018,  1, 15), (2018,  1, 22)]
         if not today:
             today = pytz.utc.localize(datetime.datetime.now())
         #else:
@@ -419,19 +419,19 @@ class PlayerEntry(models.Model):
     def build_entry(cls):
 
         dave = PlayerEntry(player=Player.objects.get(username='dave.parmer'),
-                    season=2017,
+                    season=2018,
                     week=13,
                     is_active=True)
         keith = PlayerEntry(player=Player.objects.get(username='keith.parmer'),
-                    season=2017,
+                    season=2018,
                     week=13,
                     is_active=True)
         sean = PlayerEntry(player=Player.objects.get(username='sean.parmer'),
-                    season=2017,
+                    season=2018,
                     week=13,
                     is_active=True)
         scott = PlayerEntry(player=Player.objects.get(username='scott.parmer'),
-                    season=2017,
+                    season=2018,
                     week=13,
                     is_active=True)
 
@@ -1012,12 +1012,12 @@ class NflGameMgr(models.Manager):
     @classmethod
     def game_factory(cls):
 
-        csv_file = settings.DATA_ROOT + '/2017_NFL_Sched.csv'
+        csv_file = settings.DATA_ROOT + '/2018_NFL_Sched.csv'
         file_obj = open(csv_file)
 
         reader = csv.DictReader(file_obj, delimiter=',')
         reader.fieldnames = ['week', 'game', 'date', 'time', 'away_team', 'home_team']
-        season = int(2017)
+        season = int(2018)
 
         for line in reader:
             #print(line['week'].strip(), line['game'].strip(), line['date'].strip(), line['time'].strip(),
