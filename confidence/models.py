@@ -1013,7 +1013,7 @@ class NflGameMgr(models.Manager):
     def game_factory(cls):
 
         csv_file = settings.DATA_ROOT + '/2018_NFL_Sched.csv'
-        file_obj = open(csv_file)
+        file_obj = open(csv_file, mode='r', encoding='utf-8-sig')
 
         reader = csv.DictReader(file_obj, delimiter=',')
         reader.fieldnames = ['week', 'game', 'date', 'time', 'away_team', 'home_team']
