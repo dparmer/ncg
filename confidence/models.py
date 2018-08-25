@@ -1030,7 +1030,7 @@ class NflGameMgr(models.Manager):
             hour_of_day = int(hour[0])
             min_of_day, am_pm = hour[1].split()
             newdate = str(int(dates[2]) + 2000) + "-" + str(dates[0]) + "-" + str(dates[1])
-            if am_pm == 'PM':
+            if am_pm == 'PM' and hour_of_day < 12:
                 hour_of_day += 12
 
             gametime = datetime.datetime(int(dates[2]) + 2000, int(dates[0]), int(dates[1]),
